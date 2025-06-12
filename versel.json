@@ -1,0 +1,17 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/survey",
+      "destination": "/api/survey.js"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/client/$1"
+    }
+  ],
+  "functions": {
+    "api/survey.js": {
+      "maxDuration": 30
+    }
+  }
+}
