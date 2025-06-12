@@ -14,10 +14,20 @@
   to = "/index.html"
   status = 200
 
-# Custom domain configuration
+# Security headers
 [[headers]]
   for = "/*"
   [headers.values]
-    X-Frame-Options = "SAMEORIGIN"
+    X-Frame-Options = "DENY"
     X-Content-Type-Options = "nosniff"
+    X-XSS-Protection = "1; mode=block"
     Referrer-Policy = "strict-origin-when-cross-origin"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' fonts.googleapis.com; font-src 'self' fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://potenzial.grovia-digital.com"
+
+# Rate limiting for API endpoints
+[[headers]]
+  for = "/.netlify/functions/*"
+  [headers.values]
+    X-RateLimit-Limit = "100"
+    X-RateLimit-Window = "3600"
