@@ -70,7 +70,7 @@
         }
 
         .logo {
-            width: 100px;
+            width: 200px;
             height: auto;
             border-radius: 8px;
         }
@@ -406,21 +406,21 @@
             {
                 title: "Was ist dein konkretes 3-Monats-Ziel, das dich JETZT antreibt?",
                 options: [
-                    "🔥 Exakt messbar & terminiert (z.B. \"Bis 30.09. 15 Leads/Monat via LinkedIn\")",
-                    "✅ Klarer Fokus (z.B. \"Mein Webinar bis August launchbereit haben\")",
-                    "🟡 Teilweise konkret (z.B. \"Mehr Sichtbarkeit in meiner Branche\")",
-                    "⚠️ Vage (z.B. \"Beruflich durchstarten\")",
-                    "❌ Kein Ziel / unsicher"
+                    "Exakt messbar & terminiert (z.B. \"Bis 30.09. 15 Leads/Monat via LinkedIn\")",
+                    "Klarer Fokus (z.B. \"Mein Webinar bis August launchbereit haben\")",
+                    "Teilweise konkret (z.B. \"Mehr Sichtbarkeit in meiner Branche\")",
+                    "Vage (z.B. \"Beruflich durchstarten\")",
+                    "Kein Ziel / unsicher"
                 ]
             },
             {
                 title: "Was ist deine große Vision für die nächsten 1-2 Jahre, wenn dein Personal Branding FUNKTIONIERT?",
                 options: [
-                    "🌟 Klare Skalierung (z.B. \"Als Top-Expert:in bekannt, 50% mehr Umsatz automatisiert\")",
-                    "🚀 Wachstum mit Plan (z.B. \"Team aufbauen, internationale Kund:innen\")",
-                    "⏱️ Stabilisierung (z.B. \"Konstante Anfragen ohne Akquise\")",
-                    "🔍 Unklar (z.B. \"Finanziell besser dastehen\")",
-                    "❌ Keine Vision"
+                    "Klare Skalierung (z.B. \"Als Top-Expert:in bekannt, 50% mehr Umsatz automatisiert\")",
+                    "Wachstum mit Plan (z.B. \"Team aufbauen, internationale Kund:innen\")",
+                    "Stabilisierung (z.B. \"Konstante Anfragen ohne Akquise\")",
+                    "Unklar (z.B. \"Finanziell besser dastehen\")",
+                    "Keine Vision"
                 ]
             },
             {
@@ -435,9 +435,9 @@
             {
                 title: "Wie sicher bist du, dass du die Masterclass-Strategien SOFORT umsetzt?",
                 options: [
-                    "💯 Starte direkt durch – ich will keine Zeit verlieren!",
-                    "✅ Werde viel umsetzen (ggf. mit Support)",
-                    "⏸️ Brauche erst externe Motivation"
+                    "Starte direkt durch – ich will keine Zeit verlieren!",
+                    "Werde viel umsetzen (ggf. mit Support)",
+                    "Brauche erst externe Motivation"
                 ]
             },
             {
@@ -468,7 +468,7 @@
                     <div class="question-title">${question.title}</div>
                     <div class="radio-group">
                         ${question.options.map((option, index) => `
-                            <label class="radio-item ${answers[`question${currentStep}`] === option ? 'selected' : ''}" onclick="selectOption(${currentStep}, '${option.replace(/'/g, "\\'")}')">
+                            <label class="radio-item ${answers[`question${currentStep}`] === option ? 'selected' : ''}" onclick="selectOption(${currentStep}, ${index})">
                                 <input type="radio" name="question${currentStep}" value="${option}" class="radio-input" ${answers[`question${currentStep}`] === option ? 'checked' : ''}>
                                 <span class="radio-label">${option}</span>
                             </label>
@@ -493,7 +493,9 @@
             updateButtons();
         }
 
-        function selectOption(questionNum, option) {
+        function selectOption(questionNum, optionIndex) {
+            const question = questions[questionNum - 1];
+            const option = question.options[optionIndex];
             answers[`question${questionNum}`] = option;
             renderCurrentStep();
         }
@@ -561,18 +563,18 @@
                 '> 8h (Turbo-Transformation möglich)': 4,
                 
                 // Question 3: 3-Monats-Ziel
-                '🔥 Exakt messbar & terminiert (z.B. "Bis 30.09. 15 Leads/Monat via LinkedIn")': 5,
-                '✅ Klarer Fokus (z.B. "Mein Webinar bis August launchbereit haben")': 4,
-                '🟡 Teilweise konkret (z.B. "Mehr Sichtbarkeit in meiner Branche")': 3,
-                '⚠️ Vage (z.B. "Beruflich durchstarten")': 2,
-                '❌ Kein Ziel / unsicher': 1,
+                'Exakt messbar & terminiert (z.B. "Bis 30.09. 15 Leads/Monat via LinkedIn")': 5,
+                'Klarer Fokus (z.B. "Mein Webinar bis August launchbereit haben")': 4,
+                'Teilweise konkret (z.B. "Mehr Sichtbarkeit in meiner Branche")': 3,
+                'Vage (z.B. "Beruflich durchstarten")': 2,
+                'Kein Ziel / unsicher': 1,
                 
                 // Question 4: Vision
-                '🌟 Klare Skalierung (z.B. "Als Top-Expert:in bekannt, 50% mehr Umsatz automatisiert")': 5,
-                '🚀 Wachstum mit Plan (z.B. "Team aufbauen, internationale Kund:innen")': 4,
-                '⏱️ Stabilisierung (z.B. "Konstante Anfragen ohne Akquise")': 3,
-                '🔍 Unklar (z.B. "Finanziell besser dastehen")': 2,
-                '❌ Keine Vision': 1,
+                'Klare Skalierung (z.B. "Als Top-Expert:in bekannt, 50% mehr Umsatz automatisiert")': 5,
+                'Wachstum mit Plan (z.B. "Team aufbauen, internationale Kund:innen")': 4,
+                'Stabilisierung (z.B. "Konstante Anfragen ohne Akquise")': 3,
+                'Unklar (z.B. "Finanziell besser dastehen")': 2,
+                'Keine Vision': 1,
                 
                 // Question 5: Personal Branding Überzeugung
                 'Stimme VOLL zu (erkenne den systemischen Hebel)': 4,
@@ -581,9 +583,9 @@
                 'Stimme nicht zu (glaube an veraltete Methoden)': 1,
                 
                 // Question 6: Umsetzungsbereitschaft
-                '💯 Starte direkt durch – ich will keine Zeit verlieren!': 3,
-                '✅ Werde viel umsetzen (ggf. mit Support)': 2,
-                '⏸️ Brauche erst externe Motivation': 1,
+                'Starte direkt durch – ich will keine Zeit verlieren!': 3,
+                'Werde viel umsetzen (ggf. mit Support)': 2,
+                'Brauche erst externe Motivation': 1,
                 
                 // Question 7: Veränderungswille
                 'Extrem! Ich bin bereit für den nächsten Level-Sprung': 4,
