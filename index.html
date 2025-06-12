@@ -4,52 +4,511 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Grovia Digital - Personal Branding Potenzialanalyse</title>
+    <meta name="description" content="Entdecke dein Personal Branding Potenzial mit unserer professionellen 8-Fragen Analyse. Erhalte personalisierte Einblicke für deinen Social Media Erfolg.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
             margin: 0;
-            padding: 20px;
+            padding: 0;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .survey-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
         }
-        .container {
+        .survey-card {
             background: white;
-            padding: 40px;
             border-radius: 12px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.1);
-            text-align: center;
-            max-width: 500px;
+            padding: 40px;
+            width: 100%;
         }
-        h1 {
+        .question-group {
+            margin-bottom: 30px;
+        }
+        .question-title {
+            font-size: 18px;
+            font-weight: 600;
             color: #333;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
-        .btn {
+        .radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .radio-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .radio-item:hover {
+            border-color: #667eea;
+            background-color: #f8faff;
+        }
+        .radio-item.selected {
+            border-color: #667eea;
+            background-color: #f0f4ff;
+        }
+        .radio-input {
+            margin-right: 12px;
+        }
+        .btn-primary {
             background: #667eea;
             color: white;
             padding: 15px 30px;
             border: none;
             border-radius: 8px;
             font-size: 16px;
+            font-weight: 500;
             cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
+            width: 100%;
             margin-top: 20px;
+            transition: background 0.2s;
         }
-        .btn:hover {
+        .btn-primary:hover {
             background: #5a6fd8;
+        }
+        .btn-primary:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+        }
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.2s;
+            box-sizing: border-box;
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .result-card {
+            text-align: center;
+        }
+        .score-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 30px;
+            font-size: 32px;
+            font-weight: 700;
+            color: white;
+        }
+        .score-high {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+        .score-low {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        }
+        .hidden {
+            display: none;
+        }
+        @media (max-width: 768px) {
+            .survey-container {
+                padding: 10px;
+            }
+            .survey-card {
+                padding: 20px;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Grovia Digital</h1>
-        <h2>Personal Branding Potenzialanalyse</h2>
-        <p>Entdecke dein Personal Branding Potenzial in nur 8 Fragen</p>
-        <a href="/client/index.html" class="btn">Analyse starten</a>
+    <div id="app">
+        <div class="survey-container">
+            <div class="survey-card">
+                <div id="welcome-screen">
+                    <div style="text-align: center; margin-bottom: 40px;">
+                        <h1 style="color: #333; margin-bottom: 10px;">Grovia Digital</h1>
+                        <h2 style="color: #667eea; margin-bottom: 20px;">Personal Branding Potenzialanalyse</h2>
+                        <p style="color: #666; font-size: 18px;">Entdecke dein Personal Branding Potenzial in nur 8 Fragen</p>
+                    </div>
+                    <button class="btn-primary" onclick="startSurvey()">Analyse starten</button>
+                </div>
+
+                <div id="survey-form" class="hidden">
+                    <form id="survey" onsubmit="submitSurvey(event)">
+                        <div class="question-group">
+                            <div class="question-title">1. Wie schätzt du dein aktuelles Verständnis von Personal Branding auf Social Media ein?</div>
+                            <div class="radio-group">
+                                <label class="radio-item">
+                                    <input type="radio" name="question1" value="Ich bin völlig neu in diesem Bereich" class="radio-input" onchange="updateSelection(this)">
+                                    Ich bin völlig neu in diesem Bereich
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="question1" value="Ich habe grundlegende Kenntnisse" class="radio-input" onchange="updateSelection(this)">
+                                    Ich habe grundlegende Kenntnisse
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="question1" value="Ich kenne mich gut aus, setze aber wenig um" class="radio-input" onchange="updateSelection(this)">
+                                    Ich kenne mich gut aus, setze aber wenig um
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="question1" value="Ich bin Experte und setze konsequent um" class="radio-input" onchange="updateSelection(this)">
+                                    Ich bin Experte und setze konsequent um
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="question-group">
+                            <div class="question-title">2. Wie viele unentdeckte Chancen oder ideale Kunden vermutest du, verpasst du aktuell, weil deine Expertise online nicht sichtbar genug ist?</div>
+                            <div class="radio-group">
+                                <label class="radio-item">
+                                    <input type="radio" name="question2" value="Keine, ich bin zufrieden mit meiner Sichtbarkeit" class="radio-input" onchange="updateSelection(this)">
+                                    Keine, ich bin zufrieden mit meiner Sichtbarkeit
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="question2" value="Wenige, aber es könnte besser sein" class="radio-input" onchange="updateSelection(this)">
+                                    Wenige, aber es könnte besser sein
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="question2" value="Einige, ich sehe definitiv Verbesserungspotenzial" class="radio-input" onchange="updateSelection(this)">
+                                    Einige, ich sehe definitiv Verbesserungspotenzial
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="question2" value="Viele, ich bin mir sicher, dass ich großes Potenzial verschenke" class="radio-input" onchange="updateSelection(this)">
+                                    Viele, ich bin mir sicher, dass ich großes Potenzial verschenke
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="question-group">
+                            <div class="question-title">3. Welche Herausforderung beschreibt am besten deine aktuelle Situation beim Personal Branding?</div>
+                            <div class="radio-group">
+                                <label class="radio-item">
+                                    <input type="radio" name="question3" value="Ich weiß nicht, wo ich anfangen soll" class="radio-input" onchange="updateSelection(this)">
+                                    Ich weiß nicht, wo ich anfangen soll
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="question3" value="Mir fehlt die Zeit für regelmäßige Inhalte" class="radio-input" onchange="updateSelection(this)">
+                                    Mir fehlt die Zeit für regelmäßige Inhalte
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="question3" value="Ich erstelle Inhalte, aber sie erreichen nicht die richtige Zielgruppe" class="radio-input" onchange="updateSelection(this)">
+                                    Ich erstelle Inhalte, aber sie erreichen nicht die richtige Zielgruppe
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="question3" value="Ich habe eine Strategie und setze sie erfolgreich um" class="radio-input" onchange="updateSelection(this)">
+                                    Ich habe eine Strategie und setze sie erfolgreich um
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="question-group">
+                            <div class="question-title">4. Wie konsistent bist du derzeit bei der Erstellung und Veröffentlichung von Inhalten?</div>
+                            <div class="radio-group">
+                                <label class="radio-item">
+                                    <input type="radio" name="question4" value="Sehr unregelmäßig oder gar nicht" class="radio-input" onchange="updateSelection(this)">
+                                    Sehr unregelmäßig oder gar nicht
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="question4" value="Gelegentlich, wenn ich Zeit und Inspiration habe" class="radio-input" onchange="updateSelection(this)">
+                                    Gelegentlich, wenn ich Zeit und Inspiration habe
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="question4" value="Regelmäßig, aber nicht strategisch geplant" class="radio-input" onchange="updateSelection(this)">
+                                    Regelmäßig, aber nicht strategisch geplant
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="question4" value="Sehr konsistent mit einem festen Posting-Plan" class="radio-input" onchange="updateSelection(this)">
+                                    Sehr konsistent mit einem festen Posting-Plan
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="question-group">
+                            <div class="question-title">5. Wie gut kennst du deine Zielgruppe und deren Bedürfnisse auf Social Media?</div>
+                            <div class="radio-group">
+                                <label class="radio-item">
+                                    <input type="radio" name="question5" value="Gar nicht, ich poste einfach drauflos" class="radio-input" onchange="updateSelection(this)">
+                                    Gar nicht, ich poste einfach drauflos
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="question5" value="Oberflächlich, ich habe eine grobe Vorstellung" class="radio-input" onchange="updateSelection(this)">
+                                    Oberflächlich, ich habe eine grobe Vorstellung
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="question5" value="Gut, ich kenne ihre Hauptprobleme und Interessen" class="radio-input" onchange="updateSelection(this)">
+                                    Gut, ich kenne ihre Hauptprobleme und Interessen
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="question5" value="Sehr gut, ich erstelle gezielt Inhalte für ihre spezifischen Bedürfnisse" class="radio-input" onchange="updateSelection(this)">
+                                    Sehr gut, ich erstelle gezielt Inhalte für ihre spezifischen Bedürfnisse
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="question-group">
+                            <div class="question-title">6. Wie würdest du deine aktuelle Online-Präsenz und Reichweite einschätzen?</div>
+                            <div class="radio-group">
+                                <label class="radio-item">
+                                    <input type="radio" name="question6" value="Praktisch nicht vorhanden" class="radio-input" onchange="updateSelection(this)">
+                                    Praktisch nicht vorhanden
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="question6" value="Vorhanden, aber sehr begrenzt" class="radio-input" onchange="updateSelection(this)">
+                                    Vorhanden, aber sehr begrenzt
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="question6" value="Solide Basis, aber noch ausbaufähig" class="radio-input" onchange="updateSelection(this)">
+                                    Solide Basis, aber noch ausbaufähig
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="question6" value="Stark und wachsend mit engagierter Community" class="radio-input" onchange="updateSelection(this)">
+                                    Stark und wachsend mit engagierter Community
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="question-group">
+                            <div class="question-title">7. Wie messbar sind deine bisherigen Erfolge im Personal Branding?</div>
+                            <div class="radio-group">
+                                <label class="radio-item">
+                                    <input type="radio" name="question7" value="Ich messe nichts und sehe keine konkreten Erfolge" class="radio-input" onchange="updateSelection(this)">
+                                    Ich messe nichts und sehe keine konkreten Erfolge
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="question7" value="Ich sehe gelegentlich positive Reaktionen, messe aber nicht systematisch" class="radio-input" onchange="updateSelection(this)">
+                                    Ich sehe gelegentlich positive Reaktionen, messe aber nicht systematisch
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="question7" value="Ich verfolge einige Kennzahlen und sehe moderate Erfolge" class="radio-input" onchange="updateSelection(this)">
+                                    Ich verfolge einige Kennzahlen und sehe moderate Erfolge
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="question7" value="Ich messe systematisch und kann klare, positive Entwicklungen vorweisen" class="radio-input" onchange="updateSelection(this)">
+                                    Ich messe systematisch und kann klare, positive Entwicklungen vorweisen
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="question-group">
+                            <div class="question-title">8. Wie bereit bist du, Zeit und Ressourcen in die Verbesserung deines Personal Brandings zu investieren?</div>
+                            <div class="radio-group">
+                                <label class="radio-item">
+                                    <input type="radio" name="question8" value="Gar nicht, es hat keine Priorität für mich" class="radio-input" onchange="updateSelection(this)">
+                                    Gar nicht, es hat keine Priorität für mich
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="question8" value="Wenig, nur wenn es sehr einfach umsetzbar ist" class="radio-input" onchange="updateSelection(this)">
+                                    Wenig, nur wenn es sehr einfach umsetzbar ist
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="question8" value="Moderat, ich würde gerne mehr machen, wenn ich wüsste wie" class="radio-input" onchange="updateSelection(this)">
+                                    Moderat, ich würde gerne mehr machen, wenn ich wüsste wie
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="question8" value="Hoch, ich bin bereit, signifikant zu investieren für bessere Ergebnisse" class="radio-input" onchange="updateSelection(this)">
+                                    Hoch, ich bin bereit, signifikant zu investieren für bessere Ergebnisse
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Vorname *</label>
+                            <input type="text" name="firstName" class="form-input" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">E-Mail-Adresse *</label>
+                            <input type="email" name="email" class="form-input" required>
+                        </div>
+
+                        <button type="submit" class="btn-primary" id="submit-btn">Analyse abschließen</button>
+                    </form>
+                </div>
+
+                <div id="result-screen" class="hidden">
+                    <div class="result-card">
+                        <div id="score-display"></div>
+                        <div id="result-message"></div>
+                        <button class="btn-primary" onclick="restartSurvey()">Neue Analyse starten</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
+
+    <script>
+        function startSurvey() {
+            document.getElementById('welcome-screen').classList.add('hidden');
+            document.getElementById('survey-form').classList.remove('hidden');
+        }
+
+        function updateSelection(radio) {
+            const radioItems = radio.closest('.radio-group').querySelectorAll('.radio-item');
+            radioItems.forEach(item => item.classList.remove('selected'));
+            radio.closest('.radio-item').classList.add('selected');
+        }
+
+        async function submitSurvey(event) {
+            event.preventDefault();
+            
+            const submitBtn = document.getElementById('submit-btn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Wird verarbeitet...';
+
+            const formData = new FormData(event.target);
+            const data = Object.fromEntries(formData.entries());
+
+            // Calculate score based on Personal Branding commitment levels
+            const scores = {
+                // Question 1: Understanding
+                'Ich bin völlig neu in diesem Bereich': 1,
+                'Ich habe grundlegende Kenntnisse': 2,
+                'Ich kenne mich gut aus, setze aber wenig um': 3,
+                'Ich bin Experte und setze konsequent um': 4,
+                // Question 2: Opportunities (reversed scoring)
+                'Keine, ich bin zufrieden mit meiner Sichtbarkeit': 4,
+                'Wenige, aber es könnte besser sein': 3,
+                'Einige, ich sehe definitiv Verbesserungspotenzial': 2,
+                'Viele, ich bin mir sicher, dass ich großes Potenzial verschenke': 1,
+                // Question 3: Challenges
+                'Ich weiß nicht, wo ich anfangen soll': 1,
+                'Mir fehlt die Zeit für regelmäßige Inhalte': 2,
+                'Ich erstelle Inhalte, aber sie erreichen nicht die richtige Zielgruppe': 3,
+                'Ich habe eine Strategie und setze sie erfolgreich um': 4,
+                // Question 4: Consistency
+                'Sehr unregelmäßig oder gar nicht': 1,
+                'Gelegentlich, wenn ich Zeit und Inspiration habe': 2,
+                'Regelmäßig, aber nicht strategisch geplant': 3,
+                'Sehr konsistent mit einem festen Posting-Plan': 4,
+                // Question 5: Target audience knowledge
+                'Gar nicht, ich poste einfach drauflos': 1,
+                'Oberflächlich, ich habe eine grobe Vorstellung': 2,
+                'Gut, ich kenne ihre Hauptprobleme und Interessen': 3,
+                'Sehr gut, ich erstelle gezielt Inhalte für ihre spezifischen Bedürfnisse': 4,
+                // Question 6: Online presence
+                'Praktisch nicht vorhanden': 1,
+                'Vorhanden, aber sehr begrenzt': 2,
+                'Solide Basis, aber noch ausbaufähig': 3,
+                'Stark und wachsend mit engagierter Community': 4,
+                // Question 7: Measurable success
+                'Ich messe nichts und sehe keine konkreten Erfolge': 1,
+                'Ich sehe gelegentlich positive Reaktionen, messe aber nicht systematisch': 2,
+                'Ich verfolge einige Kennzahlen und sehe moderate Erfolge': 3,
+                'Ich messe systematisch und kann klare, positive Entwicklungen vorweisen': 4,
+                // Question 8: Investment readiness
+                'Gar nicht, es hat keine Priorität für mich': 1,
+                'Wenig, nur wenn es sehr einfach umsetzbar ist': 2,
+                'Moderat, ich würde gerne mehr machen, wenn ich wüsste wie': 3,
+                'Hoch, ich bin bereit, signifikant zu investieren für bessere Ergebnisse': 4
+            };
+
+            let totalScore = 0;
+            for (let i = 1; i <= 8; i++) {
+                const answer = data[`question${i}`];
+                totalScore += scores[answer] || 0;
+            }
+
+            const scorePercentage = Math.round((totalScore / 32) * 100);
+            
+            data.totalScore = totalScore;
+            data.scorePercentage = scorePercentage;
+
+            try {
+                const response = await fetch('/api/survey', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                showResult(scorePercentage);
+            } catch (error) {
+                console.error('Error submitting survey:', error);
+                showResult(scorePercentage);
+            }
+        }
+
+        function showResult(scorePercentage) {
+            document.getElementById('survey-form').classList.add('hidden');
+            document.getElementById('result-screen').classList.remove('hidden');
+
+            const scoreDisplay = document.getElementById('score-display');
+            const resultMessage = document.getElementById('result-message');
+
+            const scoreClass = scorePercentage > 50 ? 'score-high' : 'score-low';
+            scoreDisplay.innerHTML = `<div class="score-circle ${scoreClass}">${scorePercentage}%</div>`;
+
+            if (scorePercentage > 50) {
+                resultMessage.innerHTML = `
+                    <h2 style="color: #10b981; margin-bottom: 20px;">Glückwunsch! Du bist auf einem guten Weg!</h2>
+                    <div style="text-align: left;">
+                        <p><strong>Dein Personal Branding Score: ${scorePercentage}%</strong></p>
+                        <p>Du hast bereits eine solide Grundlage in deinem Personal Branding aufgebaut. Deine Anstrengungen zahlen sich aus, und du bist auf dem richtigen Weg, deine Expertise sichtbar zu machen.</p>
+                        <h3 style="color: #333; margin-top: 25px;">Deine nächsten Schritte:</h3>
+                        <ul style="text-align: left; color: #666;">
+                            <li>✓ Optimiere deine bestehende Strategie für noch bessere Ergebnisse</li>
+                            <li>✓ Fokussiere dich auf die Bereiche mit dem größten Verbesserungspotenzial</li>
+                            <li>✓ Baue systematisch deine Reichweite und dein Engagement aus</li>
+                            <li>✓ Nutze deine vorhandenen Stärken, um noch gezielter zu kommunizieren</li>
+                        </ul>
+                        <p style="margin-top: 25px;"><strong>Du verfügst bereits über wichtige Grundlagen – lass uns gemeinsam das volle Potenzial ausschöpfen!</strong></p>
+                    </div>
+                `;
+            } else {
+                resultMessage.innerHTML = `
+                    <h2 style="color: #f59e0b; margin-bottom: 20px;">Großes Potenzial wartet auf dich!</h2>
+                    <div style="text-align: left;">
+                        <p><strong>Dein Personal Branding Score: ${scorePercentage}%</strong></p>
+                        <p>Keine Sorge – du stehst am Anfang einer spannenden Reise! Deine ehrlichen Antworten zeigen, dass du dir deiner aktuellen Situation bewusst bist. Das ist der erste und wichtigste Schritt zur Verbesserung.</p>
+                        <h3 style="color: #333; margin-top: 25px;">Deine Chancen:</h3>
+                        <ul style="text-align: left; color: #666;">
+                            <li>🚀 Enormes Steigerungspotenzial in allen Bereichen</li>
+                            <li>🎯 Klare Roadmap für schnelle, sichtbare Fortschritte</li>
+                            <li>💎 Versteckte Expertise, die nur darauf wartet, entdeckt zu werden</li>
+                            <li>🌟 Möglichkeit, sich als Experte in deinem Bereich zu positionieren</li>
+                        </ul>
+                        <p style="margin-top: 25px;"><strong>Stell dir vor, wie sich dein Business und deine Sichtbarkeit in den nächsten Monaten entwickeln könnten!</strong></p>
+                    </div>
+                `;
+            }
+        }
+
+        function restartSurvey() {
+            document.getElementById('result-screen').classList.add('hidden');
+            document.getElementById('welcome-screen').classList.remove('hidden');
+            document.getElementById('survey').reset();
+            
+            document.querySelectorAll('.radio-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            
+            const submitBtn = document.getElementById('submit-btn');
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Analyse abschließen';
+        }
+    </script>
 </body>
 </html>
