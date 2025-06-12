@@ -70,9 +70,9 @@
         }
 
         .logo {
-            width: 120px;
+            width: 100px;
             height: auto;
-            opacity: 0.8;
+            border-radius: 8px;
         }
 
         .progress-section {
@@ -266,6 +266,42 @@
             margin-bottom: 24px;
         }
 
+        .footer {
+            margin-top: 48px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border);
+        }
+
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .footer-content p {
+            margin: 0;
+            color: var(--muted-foreground);
+            font-size: 14px;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 24px;
+        }
+
+        .footer-link {
+            color: var(--muted-foreground);
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.2s;
+        }
+
+        .footer-link:hover {
+            color: var(--foreground);
+        }
+
         @media (max-width: 768px) {
             .container {
                 padding: 16px;
@@ -283,6 +319,13 @@
             .button-group {
                 flex-direction: column;
             }
+            .footer-content {
+                flex-direction: column;
+                text-align: center;
+            }
+            .footer-links {
+                justify-content: center;
+            }
         }
     </style>
 </head>
@@ -294,11 +337,7 @@
                     <h1>Grovia Digital</h1>
                     <p>Personal Branding Masterclass</p>
                 </div>
-                <svg class="logo" viewBox="0 0 120 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M20 8L32 20L20 32L8 20L20 8Z" fill="#1e293b"/>
-                    <rect x="40" y="12" width="16" height="16" fill="#3b82f6"/>
-                    <text x="65" y="25" font-family="Inter" font-weight="700" font-size="14" fill="#1e293b">GROVIA</text>
-                </svg>
+                <img class="logo" src="https://raw.githubusercontent.com/KnAlex83/Potenzial-Analyse/main/client/src/assets/grovia-logo.jpg" alt="Grovia Digital Logo">
             </div>
 
             <div id="survey-content">
@@ -326,6 +365,17 @@
                     <button class="btn btn-primary" onclick="restartSurvey()">Neue Analyse starten</button>
                 </div>
             </div>
+
+            <div class="footer">
+                <div class="footer-content">
+                    <p>© 2024 Grovia Digital. Alle Rechte vorbehalten.</p>
+                    <div class="footer-links">
+                        <a href="#" class="footer-link">Datenschutz</a>
+                        <a href="#" class="footer-link">Impressum</a>
+                        <a href="#" class="footer-link">Kontakt</a>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -336,75 +386,75 @@
 
         const questions = [
             {
-                title: "Wie schätzt du dein aktuelles Verständnis von Personal Branding auf Social Media ein?",
+                title: "Wie viele unentdeckte Chancen oder ideale Kunden vermutest, verpasst du aktuell, weil deine Expertise online noch nicht sichtbar ist?",
                 options: [
-                    "Ich bin völlig neu in diesem Bereich",
-                    "Ich habe grundlegende Kenntnisse",
-                    "Ich kenne mich gut aus, setze aber wenig um",
-                    "Ich bin Experte und setze konsequent um"
-                ]
-            },
-            {
-                title: "Wie viele unentdeckte Chancen oder ideale Kunden vermutest du, verpasst du aktuell, weil deine Expertise online nicht sichtbar genug ist?",
-                options: [
-                    "Kaum - ich starte gerade erst",
-                    "Einige - ich spüre, dass mehr möglich wäre",
+                    "Kaum – ich starte gerade erst",
+                    "Einige – ich spüre, dass mehr möglich wäre",
                     "Viele! Ich ahne, wieviel Potenzial brachliegt",
-                    "Massive Mengen - es hält mein Business zurück"
+                    "Massive Mengen – es hält mein Business zurück"
                 ]
             },
             {
-                title: "Welche Herausforderung beschreibt am besten deine aktuelle Situation beim Personal Branding?",
+                title: "Wie viele Stunden wirst du WÖCHENTLICH investieren, um nach der Masterclass SOFORT Ergebnisse zu sehen?",
                 options: [
-                    "Ich weiß nicht, wo ich anfangen soll",
-                    "Mir fehlt die Zeit für regelmäßige Inhalte",
-                    "Ich erstelle Inhalte, aber sie erreichen nicht die richtige Zielgruppe",
-                    "Ich habe eine Strategie und setze sie erfolgreich um"
+                    "< 2h (riskiert Stillstand)",
+                    "2-4h (Minimalaufwand für erste Schritte)",
+                    "5-8h (ideales Tempo für spürbare Veränderung)",
+                    "> 8h (Turbo-Transformation möglich)"
                 ]
             },
             {
-                title: "Wie konsistent bist du derzeit bei der Erstellung und Veröffentlichung von Inhalten?",
+                title: "Was ist dein konkretes 3-Monats-Ziel, das dich JETZT antreibt?",
                 options: [
-                    "Sehr unregelmäßig oder gar nicht",
-                    "Gelegentlich, wenn ich Zeit und Inspiration habe",
-                    "Regelmäßig, aber nicht strategisch geplant",
-                    "Sehr konsistent mit einem festen Posting-Plan"
+                    "🔥 Exakt messbar & terminiert (z.B. \"Bis 30.09. 15 Leads/Monat via LinkedIn\")",
+                    "✅ Klarer Fokus (z.B. \"Mein Webinar bis August launchbereit haben\")",
+                    "🟡 Teilweise konkret (z.B. \"Mehr Sichtbarkeit in meiner Branche\")",
+                    "⚠️ Vage (z.B. \"Beruflich durchstarten\")",
+                    "❌ Kein Ziel / unsicher"
                 ]
             },
             {
-                title: "Wie gut kennst du deine Zielgruppe und deren Bedürfnisse auf Social Media?",
+                title: "Was ist deine große Vision für die nächsten 1-2 Jahre, wenn dein Personal Branding FUNKTIONIERT?",
                 options: [
-                    "Gar nicht, ich poste einfach drauflos",
-                    "Oberflächlich, ich habe eine grobe Vorstellung",
-                    "Gut, ich kenne ihre Hauptprobleme und Interessen",
-                    "Sehr gut, ich erstelle gezielt Inhalte für ihre spezifischen Bedürfnisse"
+                    "🌟 Klare Skalierung (z.B. \"Als Top-Expert:in bekannt, 50% mehr Umsatz automatisiert\")",
+                    "🚀 Wachstum mit Plan (z.B. \"Team aufbauen, internationale Kund:innen\")",
+                    "⏱️ Stabilisierung (z.B. \"Konstante Anfragen ohne Akquise\")",
+                    "🔍 Unklar (z.B. \"Finanziell besser dastehen\")",
+                    "❌ Keine Vision"
                 ]
             },
             {
-                title: "Wie würdest du deine aktuelle Online-Präsenz und Reichweite einschätzen?",
+                title: "Wie sehr stimmst du zu: 'Personal Branding ist HEUTE unverzichtbar, um ohne Dauer-Akquise Wunschkunden anzuziehen'?",
                 options: [
-                    "Praktisch nicht vorhanden",
-                    "Vorhanden, aber sehr begrenzt",
-                    "Solide Basis, aber noch ausbaufähig",
-                    "Stark und wachsend mit engagierter Community"
+                    "Stimme VOLL zu (erkenne den systemischen Hebel)",
+                    "Stimme zu (sehe den Trend)",
+                    "Neutral",
+                    "Stimme nicht zu (glaube an veraltete Methoden)"
                 ]
             },
             {
-                title: "Wie messbar sind deine bisherigen Erfolge im Personal Branding?",
+                title: "Wie sicher bist du, dass du die Masterclass-Strategien SOFORT umsetzt?",
                 options: [
-                    "Ich messe nichts und sehe keine konkreten Erfolge",
-                    "Ich sehe gelegentlich positive Reaktionen, messe aber nicht systematisch",
-                    "Ich verfolge einige Kennzahlen und sehe moderate Erfolge",
-                    "Ich messe systematisch und kann klare, positive Entwicklungen vorweisen"
+                    "💯 Starte direkt durch – ich will keine Zeit verlieren!",
+                    "✅ Werde viel umsetzen (ggf. mit Support)",
+                    "⏸️ Brauche erst externe Motivation"
                 ]
             },
             {
-                title: "Wie bereit bist du, Zeit und Ressourcen in die Verbesserung deines Personal Brandings zu investieren?",
+                title: "Wie sehr WILLST du deine aktuelle Situation verändern – auch wenn es kurzfristig Energie kostet?",
                 options: [
-                    "Gar nicht, es hat keine Priorität für mich",
-                    "Wenig, nur wenn es sehr einfach umsetzbar ist",
-                    "Moderat, ich würde gerne mehr machen, wenn ich wüsste wie",
-                    "Hoch, ich bin bereit, signifikant zu investieren für bessere Ergebnisse"
+                    "Extrem! Ich bin bereit für den nächsten Level-Sprung",
+                    "Sehr – ich spüre die Dringlichkeit",
+                    "Mittel – aber ich zögere noch",
+                    "Gering – ich warte lieber ab"
+                ]
+            },
+            {
+                title: "Bist du bereit, in deine Freiheit zu investieren? 500€ für Systeme + Community, die dir Kunden bringen, während andere noch kämpfen:",
+                options: [
+                    "JA – ich will JETZT durchstarten!",
+                    "Vielleicht – brauche Details zum ROI",
+                    "Nein – ich unterschätze noch den Hebel"
                 ]
             }
         ];
@@ -498,38 +548,53 @@
             nextBtn.textContent = 'Wird verarbeitet...';
 
             const scores = {
-                'Ich bin völlig neu in diesem Bereich': 1,
-                'Ich habe grundlegende Kenntnisse': 2,
-                'Ich kenne mich gut aus, setze aber wenig um': 3,
-                'Ich bin Experte und setze konsequent um': 4,
-                'Kaum - ich starte gerade erst': 1,
-                'Einige - ich spüre, dass mehr möglich wäre': 2,
+                // Question 1: Potenzial
+                'Kaum – ich starte gerade erst': 1,
+                'Einige – ich spüre, dass mehr möglich wäre': 2,
                 'Viele! Ich ahne, wieviel Potenzial brachliegt': 3,
-                'Massive Mengen - es hält mein Business zurück': 4,
-                'Ich weiß nicht, wo ich anfangen soll': 1,
-                'Mir fehlt die Zeit für regelmäßige Inhalte': 2,
-                'Ich erstelle Inhalte, aber sie erreichen nicht die richtige Zielgruppe': 3,
-                'Ich habe eine Strategie und setze sie erfolgreich um': 4,
-                'Sehr unregelmäßig oder gar nicht': 1,
-                'Gelegentlich, wenn ich Zeit und Inspiration habe': 2,
-                'Regelmäßig, aber nicht strategisch geplant': 3,
-                'Sehr konsistent mit einem festen Posting-Plan': 4,
-                'Gar nicht, ich poste einfach drauflos': 1,
-                'Oberflächlich, ich habe eine grobe Vorstellung': 2,
-                'Gut, ich kenne ihre Hauptprobleme und Interessen': 3,
-                'Sehr gut, ich erstelle gezielt Inhalte für ihre spezifischen Bedürfnisse': 4,
-                'Praktisch nicht vorhanden': 1,
-                'Vorhanden, aber sehr begrenzt': 2,
-                'Solide Basis, aber noch ausbaufähig': 3,
-                'Stark und wachsend mit engagierter Community': 4,
-                'Ich messe nichts und sehe keine konkreten Erfolge': 1,
-                'Ich sehe gelegentlich positive Reaktionen, messe aber nicht systematisch': 2,
-                'Ich verfolge einige Kennzahlen und sehe moderate Erfolge': 3,
-                'Ich messe systematisch und kann klare, positive Entwicklungen vorweisen': 4,
-                'Gar nicht, es hat keine Priorität für mich': 1,
-                'Wenig, nur wenn es sehr einfach umsetzbar ist': 2,
-                'Moderat, ich würde gerne mehr machen, wenn ich wüsste wie': 3,
-                'Hoch, ich bin bereit, signifikant zu investieren für bessere Ergebnisse': 4
+                'Massive Mengen – es hält mein Business zurück': 4,
+                
+                // Question 2: Zeit Investment
+                '< 2h (riskiert Stillstand)': 1,
+                '2-4h (Minimalaufwand für erste Schritte)': 2,
+                '5-8h (ideales Tempo für spürbare Veränderung)': 3,
+                '> 8h (Turbo-Transformation möglich)': 4,
+                
+                // Question 3: 3-Monats-Ziel
+                '🔥 Exakt messbar & terminiert (z.B. "Bis 30.09. 15 Leads/Monat via LinkedIn")': 5,
+                '✅ Klarer Fokus (z.B. "Mein Webinar bis August launchbereit haben")': 4,
+                '🟡 Teilweise konkret (z.B. "Mehr Sichtbarkeit in meiner Branche")': 3,
+                '⚠️ Vage (z.B. "Beruflich durchstarten")': 2,
+                '❌ Kein Ziel / unsicher': 1,
+                
+                // Question 4: Vision
+                '🌟 Klare Skalierung (z.B. "Als Top-Expert:in bekannt, 50% mehr Umsatz automatisiert")': 5,
+                '🚀 Wachstum mit Plan (z.B. "Team aufbauen, internationale Kund:innen")': 4,
+                '⏱️ Stabilisierung (z.B. "Konstante Anfragen ohne Akquise")': 3,
+                '🔍 Unklar (z.B. "Finanziell besser dastehen")': 2,
+                '❌ Keine Vision': 1,
+                
+                // Question 5: Personal Branding Überzeugung
+                'Stimme VOLL zu (erkenne den systemischen Hebel)': 4,
+                'Stimme zu (sehe den Trend)': 3,
+                'Neutral': 2,
+                'Stimme nicht zu (glaube an veraltete Methoden)': 1,
+                
+                // Question 6: Umsetzungsbereitschaft
+                '💯 Starte direkt durch – ich will keine Zeit verlieren!': 3,
+                '✅ Werde viel umsetzen (ggf. mit Support)': 2,
+                '⏸️ Brauche erst externe Motivation': 1,
+                
+                // Question 7: Veränderungswille
+                'Extrem! Ich bin bereit für den nächsten Level-Sprung': 4,
+                'Sehr – ich spüre die Dringlichkeit': 3,
+                'Mittel – aber ich zögere noch': 2,
+                'Gering – ich warte lieber ab': 1,
+                
+                // Question 8: Investment Bereitschaft
+                'JA – ich will JETZT durchstarten!': 3,
+                'Vielleicht – brauche Details zum ROI': 2,
+                'Nein – ich unterschätze noch den Hebel': 1
             };
 
             let totalScore = 0;
@@ -538,7 +603,8 @@
                 totalScore += scores[answer] || 0;
             }
 
-            const scorePercentage = Math.round((totalScore / 32) * 100);
+            const maxScore = 30; // 4+4+5+5+4+3+4+3 = 32, but using 30 for better percentage distribution
+            const scorePercentage = Math.round((totalScore / maxScore) * 100);
             
             const submissionData = {
                 ...answers,
