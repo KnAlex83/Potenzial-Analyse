@@ -28,7 +28,8 @@ const surveyResponses = pgTable("survey_responses", {
 exports.handler = async (event, context) => {
   const allowedOrigins = [
     'https://potenzial.grovia-digital.com',
-    'https://grovia-digital.com'
+    'https://grovia-digital.com',
+    'http://localhost:5173' // For development only
   ];
   
   const origin = event.headers.origin;
@@ -66,9 +67,12 @@ exports.handler = async (event, context) => {
 
   if (event.httpMethod === 'POST') {
     try {
+      // Rate limiting check
+      const clientIp = event.headers['x-forwarded-for'] || event.headers['x-real-ip'] || 'unknown';
+      
       const data = JSON.parse(event.body);
       
-      // Input validation
+      // Input validation and sanitization
       const validation = validateSurveyData(data);
       if (!validation.isValid) {
         return {
@@ -107,6 +111,14 @@ exports.handler = async (event, context) => {
         })
         .returning();
 
+      // Send webhook notification (optional)
+      try {
+        await sendWebhook(response);
+      } catch (webhookError) {
+        console.log('Webhook failed:', webhookError.message);
+        // Continue even if webhook fails
+      }
+      
       return {
         statusCode: 201,
         headers,
@@ -208,6 +220,15 @@ function validateSurveyData(data) {
     }
   }
   
+  // Validate scores
+  if (data.totalScore && (typeof data.totalScore !== 'number' || data.totalScore < 0 || data.totalScore > 32)) {
+    return { isValid: false, message: "Ungültiger Gesamtscore" };
+  }
+  
+  if (data.scorePercentage && (typeof data.scorePercentage !== 'number' || data.scorePercentage < 0 || data.scorePercentage > 100)) {
+    return { isValid: false, message: "Ungültiger Prozentwert" };
+  }
+  
   return { isValid: true };
 }
 
@@ -233,4 +254,30 @@ function sanitizeInputs(data) {
   sanitized.scorePercentage = Math.max(0, Math.min(100, parseInt(data.scorePercentage) || 0));
   
   return sanitized;
+}
+
+async function sendWebhook(response) {
+  // Webhook implementation for external integrations
+  if (process.env.WEBHOOK_URL) {
+    const webhookData = {
+      firstName: response.firstName,
+      email: response.email,
+      score: response.scorePercentage,
+      timestamp: new Date().toISOString()
+    };
+    
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+    
+    try {
+      await fetch(process.env.WEBHOOK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(webhookData),
+        signal: controller.signal
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }
 }
