@@ -52,7 +52,7 @@
         .header {
             display: flex;
             justify-content: space-between;
-            align-items: flex-start;
+            align-items: center;
             margin-bottom: 48px;
         }
 
@@ -502,6 +502,7 @@
 
         function updateContactInfo(field, value) {
             answers[field] = value;
+            updateButtons();
         }
 
         function updateProgress() {
@@ -518,7 +519,9 @@
             
             if (currentStep === 9) {
                 nextBtn.textContent = 'Analyse abschließen';
-                nextBtn.disabled = !answers.firstName || !answers.email;
+                const firstName = answers.firstName && answers.firstName.trim();
+                const email = answers.email && answers.email.trim();
+                nextBtn.disabled = !firstName || !email;
             } else {
                 nextBtn.textContent = 'Weiter';
                 nextBtn.disabled = !answers[`question${currentStep}`];
