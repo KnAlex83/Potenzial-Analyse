@@ -1,0 +1,168 @@
+{
+  "id": "aa5c66c2-cea5-4a26-b39c-8977df09907a",
+  "prevId": "7b77c8c0-5f77-4b26-93f8-a26b08ea50ff",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.survey_responses": {
+      "name": "survey_responses",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "question1": {
+          "name": "question1",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "question2": {
+          "name": "question2",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "question3": {
+          "name": "question3",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "question4": {
+          "name": "question4",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "question5": {
+          "name": "question5",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "question6": {
+          "name": "question6",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "question7": {
+          "name": "question7",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "question8": {
+          "name": "question8",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "first_name": {
+          "name": "first_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "total_score": {
+          "name": "total_score",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "score_percentage": {
+          "name": "score_percentage",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_ip": {
+          "name": "user_ip",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "user_agent": {
+          "name": "user_agent",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "timestamp": {
+          "name": "timestamp",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.users": {
+      "name": "users",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "username": {
+          "name": "username",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "password": {
+          "name": "password",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "users_username_unique": {
+          "name": "users_username_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "username"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}
