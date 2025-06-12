@@ -5,7 +5,7 @@ const ws = require('ws');
 
 neonConfig.webSocketConstructor = ws;
 
-// Define schema directly for Vercel compatibility
+// Define schema directly in API file for Vercel compatibility
 const surveyResponses = pgTable("survey_responses", {
   id: serial("id").primaryKey(),
   question1: text("question1").notNull(),
