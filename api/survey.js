@@ -55,7 +55,12 @@ module.exports = async (req, res) => {
         message: "Unauthorized access - API key required"
       });
     }
-    if (!sanitizedData.firstName || !sanitizedData.email) {
+       
+    try {
+      const data = req.body;
+      const sanitizedData = sanitizeInputs(data);
+      
+      if (!sanitizedData.firstName || !sanitizedData.email) {
         return res.status(400).json({
           success: false,
           message: "Vorname und E-Mail sind erforderlich"
@@ -64,10 +69,7 @@ module.exports = async (req, res) => {
       
       const userIp = req.headers['x-forwarded-for'] || req.connection?.remoteAddress || null;
       const userAgent = req.headers['user-agent'] || null;
-    try {
-      const data = req.body;
-      const sanitizedData = sanitizeInputs(data);
-            
+
       const userIp = req.headers['x-forwarded-for'] || req.connection?.remoteAddress || null;
       const userAgent = req.headers['user-agent'] || null;
       
