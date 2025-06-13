@@ -48,7 +48,7 @@ module.exports = async (req, res) => {
        // API Authentication - Require API key for POST requests
     const apiKey = req.headers['x-api-key'] || req.headers['authorization']?.replace('Bearer ', '');
     
-    if (!apiKey || !process.env.API_KEY || apiKey !== process.env.API_KEY) {
+    if (!apiKey || apiKey !== process.env.API_KEY) {
       return res.status(401).json({
         success: false,
         message: "Unauthorized access - API key required"
