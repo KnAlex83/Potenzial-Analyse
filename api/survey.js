@@ -55,16 +55,7 @@ module.exports = async (req, res) => {
         message: "Unauthorized access - API key required"
       });
     }
-    
-    try {
-      const data = req.body;
-      const sanitizedData = sanitizeInputs(data);
-      
-      if (!sanitizedData.firstName || !sanitizedData.email) {
-    
-      const data = req.body;
-      
-      if (!data.firstName || !data.email) {
+    if (!sanitizedData.firstName || !sanitizedData.email) {
         return res.status(400).json({
           success: false,
           message: "Vorname und E-Mail sind erforderlich"
@@ -73,11 +64,20 @@ module.exports = async (req, res) => {
       
       const userIp = req.headers['x-forwarded-for'] || req.connection?.remoteAddress || null;
       const userAgent = req.headers['user-agent'] || null;
+    try {
+      const data = req.body;
+      const sanitizedData = sanitizeInputs(data);
+            
+      const userIp = req.headers['x-forwarded-for'] || req.connection?.remoteAddress || null;
+      const userAgent = req.headers['user-agent'] || null;
+      
+      const userIp = req.headers['x-forwarded-for'] || req.connection?.remoteAddress || null;
+      const userAgent = req.headers['user-agent'] || null;
       
       const totalScore = sanitizedData.totalScore || 0;
       const scorePercentage = sanitizedData.scorePercentage || 0;
       
-            const [response] = await db
+      const [response] = await db
         .insert(surveyResponses)
         .values({
           question1: sanitizedData.question1,
