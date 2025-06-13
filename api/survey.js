@@ -1,4 +1,4 @@
-// Survey API - Version 2024-06-13-13-00 - Netlify Functions Format
+// Survey API - Version 2024-06-13-13-30 - Database Schema Fixed
 const { Pool, neonConfig } = require('@neondatabase/serverless');
 const { drizzle } = require('drizzle-orm/neon-serverless');
 const { pgTable, text, serial, timestamp, integer } = require('drizzle-orm/pg-core');
@@ -352,7 +352,7 @@ function validateInputStructure(data) {
     }
   }
   
-  // Required fields validation
+  // Required fields validation - FIXED: only firstName required, not lastName
   const requiredFields = ['question1', 'question2', 'question3', 'question4', 'question5', 'question6', 'question7', 'question8', 'firstName', 'email'];
   for (const field of requiredFields) {
     if (!data[field]) {
@@ -392,11 +392,9 @@ function sanitizeInputs(data) {
     }
   }
 
-  // Sanitize text fields with enhanced security
+  // Sanitize text fields with enhanced security - FIXED: only firstName, no lastName
   sanitized.firstName = sanitizeTextField(data.firstName, 'firstName', 100);
-  sanitized.lastName = sanitizeTextField(data.lastName, 'lastName', 100);
   sanitized.email = sanitizeEmail(data.email);
-  sanitized.company = sanitizeTextField(data.company || '', 'company', 200);
 
   return sanitized;
 }
