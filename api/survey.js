@@ -60,6 +60,17 @@ module.exports = async (req, res) => {
       const data = req.body;
       const sanitizedData = sanitizeInputs(data);
       
+            // Validate required survey questions first
+      const requiredQuestions = ['question1', 'question2', 'question3', 'question4', 'question5', 'question6', 'question7', 'question8'];
+      for (const field of requiredQuestions) {
+        if (!sanitizedData[field]) {
+          return res.status(400).json({
+            success: false,
+            message: `Feld ${field} ist erforderlich`
+          });
+        }
+      }
+      
       if (!sanitizedData.firstName || !sanitizedData.email) {
         return res.status(400).json({
           success: false,
