@@ -621,7 +621,10 @@
             try {
                 await fetch('https://potenzial.grovia-digital.com/api/survey', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-API-Key': 'survey-api-2024-secure'
+                    },
                     body: JSON.stringify(submissionData)
                 });
             } catch (error) {
