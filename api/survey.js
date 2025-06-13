@@ -1,3 +1,4 @@
+// Survey API - Version 2024-06-13-10-35 - Force Cache Refresh
 const { Pool, neonConfig } = require('@neondatabase/serverless');
 const { drizzle } = require('drizzle-orm/neon-serverless');
 const { pgTable, text, serial, timestamp, integer } = require('drizzle-orm/pg-core');
@@ -26,11 +27,6 @@ const surveyResponses = pgTable("survey_responses", {
 });
 
 module.exports = async (req, res) => {
-  // Debug logging
-  console.log('DEBUG: Function called, method:', req.method);
-  console.log('DEBUG: Environment API_KEY exists:', !!process.env.API_KEY);
-  console.log('DEBUG: Headers X-API-Key:', req.headers['x-api-key']);
-  
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-API-Key');
@@ -50,36 +46,24 @@ module.exports = async (req, res) => {
   const db = drizzle(pool);
 
   if (req.method === 'POST') {
-    console.log('DEBUG: POST request detected');
-    
-    // API Authentication - Require API key for POST requests
+    // CRITICAL: API Authentication - Require API key for POST requests
     const apiKey = req.headers['x-api-key'] || req.headers['authorization']?.replace('Bearer ', '');
-    console.log('DEBUG: Extracted API key:', apiKey ? 'PRESENT' : 'MISSING');
     
+    // First check: Environment variable exists
     if (!process.env.API_KEY) {
-      console.log('DEBUG: API_KEY environment variable not found');
       return res.status(500).json({
         success: false,
-        message: "API key not configured",
-        debug: "Environment variable API_KEY is missing"
+        message: "API key not configured"
       });
     }
     
-    console.log('DEBUG: API_KEY environment variable found');
-    
+    // Second check: API key provided and matches
     if (!apiKey || apiKey !== process.env.API_KEY) {
-      console.log('DEBUG: API key validation failed');
       return res.status(401).json({
         success: false,
-        message: "Unauthorized access - API key required",
-        debug: {
-          apiKeyProvided: !!apiKey,
-          apiKeyMatch: apiKey === process.env.API_KEY
-        }
+        message: "Unauthorized access - API key required"
       });
     }
-    
-    console.log('DEBUG: API key validation passed, proceeding with request');
       
     try {
       const data = req.body;
@@ -148,6 +132,16 @@ module.exports = async (req, res) => {
   }
 
   if (req.method === 'GET') {
+    // GET requests also require authentication
+    const apiKey = req.headers['x-api-key'] || req.headers['authorization']?.replace('Bearer ', '');
+    
+    if (!apiKey || apiKey !== process.env.API_KEY) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized access"
+      });
+    }
+    
     try {
       const responses = await db.select().from(surveyResponses);
       return res.json(responses);
