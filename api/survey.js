@@ -55,7 +55,7 @@ module.exports = async (req, res) => {
         message: "Unauthorized access - API key required"
       });
     }
-       
+      
     try {
       const data = req.body;
       const sanitizedData = sanitizeInputs(data);
@@ -67,18 +67,12 @@ module.exports = async (req, res) => {
         });
       }
       
-      const userIp = req.headers['x-forwarded-for'] || req.connection?.remoteAddress || null;
-      const userAgent = req.headers['user-agent'] || null;
-
-      const userIp = req.headers['x-forwarded-for'] || req.connection?.remoteAddress || null;
-      const userAgent = req.headers['user-agent'] || null;
-      
-      const userIp = req.headers['x-forwarded-for'] || req.connection?.remoteAddress || null;
-      const userAgent = req.headers['user-agent'] || null;
-      
       const totalScore = sanitizedData.totalScore || 0;
       const scorePercentage = sanitizedData.scorePercentage || 0;
       
+      const userIp = req.headers['x-forwarded-for'] || req.connection?.remoteAddress || null;
+      const userAgent = req.headers['user-agent'] || null;
+    
       const [response] = await db
         .insert(surveyResponses)
         .values({
