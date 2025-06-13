@@ -48,12 +48,12 @@ module.exports = async (req, res) => {
        // API Authentication - Require API key for POST requests
     const apiKey = req.headers['x-api-key'] || req.headers['authorization']?.replace('Bearer ', '');
     
-  if (!process.env.API_KEY) {
-      return res.status(500).json({
+      if (!process.env.API_KEY) {
+            return res.status(500).json({
         success: false,
         message: "API key not configured"
-      });
-    }
+            });
+        }
     
     if (!apiKey || apiKey !== process.env.API_KEY) {
       return res.status(401).json({
