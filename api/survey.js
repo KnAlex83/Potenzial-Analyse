@@ -75,12 +75,12 @@ function getQuestionScore(value, questionNumber) {
   const scoringMaps = {
     1: { 'option1': 1, 'option2': 2, 'option3': 3, 'option4': 4 },
     2: { 'option1': 1, 'option2': 2, 'option3': 3, 'option4': 4 },
-    3: { 'option1': 1, 'option2': 2, 'option3': 3, 'option4': 4, 'option5': 5 },
-    4: { 'option1': 1, 'option2': 2, 'option3': 3, 'option4': 4, 'option5': 5 },
-    5: { 'option1': 1, 'option2': 2, 'option3': 3, 'option4': 4 },
-    6: { 'option1': 1, 'option2': 2, 'option3': 3 },
-    7: { 'option1': 1, 'option2': 2, 'option3': 3, 'option4': 4 },
-    8: { 'option1': 1, 'option2': 2, 'option3': 3 }
+    3: { 'option1': 5, 'option2': 4, 'option3': 3, 'option4': 2, 'option5': 1 },
+    4: { 'option1': 5, 'option2': 4, 'option3': 3, 'option4': 2, 'option5': 1 },
+    5: { 'option1': 4, 'option2': 3, 'option3': 2, 'option4': 1 },
+    6: { 'option1': 3, 'option2': 2, 'option3': 1 },
+    7: { 'option1': 4, 'option2': 3, 'option3': 2, 'option4': 1 },
+    8: { 'option1': 3, 'option2': 2, 'option3': 1 }
   };
   
   return scoringMaps[questionNumber]?.[value] || 0;
@@ -190,7 +190,7 @@ exports.handler = async (event, context) => {
                         getQuestionScore(sanitizedData.question7, 7) +
                         getQuestionScore(sanitizedData.question8, 8);
 
-      const scorePercentage = Math.round((totalScore / 30) * 100);
+      const scorePercentage = Math.round((totalScore / 32) * 100);
 
       pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
