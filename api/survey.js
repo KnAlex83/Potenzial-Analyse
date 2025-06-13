@@ -190,7 +190,7 @@ exports.handler = async (event, context) => {
                         getQuestionScore(sanitizedData.question7, 7) +
                         getQuestionScore(sanitizedData.question8, 8);
 
-      const scorePercentage = Math.round((totalScore / 32) * 100);
+      const scorePercentage = Math.round((totalScore / 30) * 100);
 
       pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
