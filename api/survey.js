@@ -1,33 +1,12 @@
-// Survey API - Version 2024-06-13-13-50 - Column Mapping Fixed
+// Survey API - Production Ready - Database Schema Matched
 const { Pool, neonConfig } = require('@neondatabase/serverless');
 const { drizzle } = require('drizzle-orm/neon-serverless');
-const { pgTable, text, serial, timestamp, integer } = require('drizzle-orm/pg-core');
 const ws = require('ws');
 
 // Rate limiting storage (in-memory for serverless functions)
 const rateLimitStore = new Map();
 
 neonConfig.webSocketConstructor = ws;
-
-// Define schema with correct column names matching database
-const surveyResponses = pgTable("survey_responses", {
-  id: serial("id").primaryKey(),
-  question1: text("question1").notNull(),
-  question2: text("question2").notNull(),
-  question3: text("question3").notNull(),
-  question4: text("question4").notNull(),
-  question5: text("question5").notNull(),
-  question6: text("question6").notNull(),
-  question7: text("question7").notNull(),
-  question8: text("question8").notNull(),
-  first_name: text("first_name").notNull(), // FIXED: Use actual database column name
-  email: text("email").notNull(),
-  total_score: integer("total_score").notNull(), // FIXED: Use actual database column name
-  score_percentage: integer("score_percentage").notNull(), // FIXED: Use actual database column name
-  user_ip: text("user_ip"),
-  user_agent: text("user_agent"),
-  timestamp: timestamp("timestamp").defaultNow().notNull(),
-});
 
 exports.handler = async (event, context) => {
   // Extract request details from Netlify event
@@ -227,8 +206,39 @@ exports.handler = async (event, context) => {
       const maxScore = 32; // Maximum possible score
       const scorePercentage = Math.round((totalScore / maxScore) * 100);
 
-      // FIXED: Map to correct database column names
-      const responseData = {
+      // Use raw SQL insert to match exact database schema
+      const insertQuery = `
+        INSERT INTO survey_responses (
+          question1, question2, question3, question4, question5, question6, question7, question8,
+          first_name, email, total_score, score_percentage, user_ip, user_agent
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+        RETURNING id;
+      `;
+
+      const values = [
+        sanitizedData.question1,
+        sanitizedData.question2,
+        sanitizedData.question3,
+        sanitizedData.question4,
+        sanitizedData.question5,
+        sanitizedData.question6,
+        sanitizedData.question7,
+        sanitizedData.question8,
+        sanitizedData.firstName,
+        sanitizedData.email,
+        totalScore,
+        scorePercentage,
+        clientIP,
+        headers['user-agent'] || null
+      ];
+
+      // Execute database insertion
+      const result = await pool.query(insertQuery, values);
+      const insertedId = result.rows[0]?.id;
+      
+      // Send webhook with enhanced data
+      const webhookData = {
+        submission_id: insertedId,
         question1: sanitizedData.question1,
         question2: sanitizedData.question2,
         question3: sanitizedData.question3,
@@ -237,30 +247,21 @@ exports.handler = async (event, context) => {
         question6: sanitizedData.question6,
         question7: sanitizedData.question7,
         question8: sanitizedData.question8,
-        first_name: sanitizedData.firstName, // FIXED: Use database column name
+        first_name: sanitizedData.firstName,
         email: sanitizedData.email,
-        total_score: totalScore, // FIXED: Use database column name
-        score_percentage: scorePercentage, // FIXED: Use database column name
-        user_ip: clientIP, // FIXED: Use database column name
-        user_agent: headers['user-agent'] || null, // FIXED: Use database column name
-      };
-
-      // Database insertion with error handling
-      const result = await db.insert(surveyResponses).values(responseData).returning();
-      
-      // Send webhook with enhanced data
-      const webhookData = {
-        ...responseData,
-        question1_label: getQuestion1Label(responseData.question1),
-        question2_label: getQuestion2Label(responseData.question2),
-        question3_label: getQuestion3Label(responseData.question3),
-        question4_label: getQuestion4Label(responseData.question4),
-        question5_label: getQuestion5Label(responseData.question5),
-        question6_label: getQuestion6Label(responseData.question6),
-        question7_label: getQuestion7Label(responseData.question7),
-        question8_label: getQuestion8Label(responseData.question8),
+        total_score: totalScore,
+        score_percentage: scorePercentage,
+        question1_label: getQuestion1Label(sanitizedData.question1),
+        question2_label: getQuestion2Label(sanitizedData.question2),
+        question3_label: getQuestion3Label(sanitizedData.question3),
+        question4_label: getQuestion4Label(sanitizedData.question4),
+        question5_label: getQuestion5Label(sanitizedData.question5),
+        question6_label: getQuestion6Label(sanitizedData.question6),
+        question7_label: getQuestion7Label(sanitizedData.question7),
+        question8_label: getQuestion8Label(sanitizedData.question8),
         timestamp: new Date().toISOString(),
-        submission_id: result[0]?.id
+        user_ip: clientIP,
+        user_agent: headers['user-agent'] || null
       };
 
       await sendWebhook(webhookData);
@@ -271,7 +272,7 @@ exports.handler = async (event, context) => {
         body: JSON.stringify({
           success: true,
           message: "Umfrage erfolgreich übermittelt",
-          id: result[0]?.id
+          id: insertedId
         })
       };
 
