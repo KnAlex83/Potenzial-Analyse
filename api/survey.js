@@ -5,7 +5,7 @@ const ws = require('ws');
 
 neonConfig.webSocketConstructor = ws;
 
-// Define schema directly in API file for Vercel compatibility
+// Define schema directly in API file for Netlify compatibility
 const surveyResponses = pgTable("survey_responses", {
   id: serial("id").primaryKey(),
   question1: text("question1").notNull(),
@@ -45,15 +45,15 @@ module.exports = async (req, res) => {
   const db = drizzle(pool);
 
   if (req.method === 'POST') {
-       // API Authentication - Require API key for POST requests
+    // API Authentication - Require API key for POST requests
     const apiKey = req.headers['x-api-key'] || req.headers['authorization']?.replace('Bearer ', '');
     
-      if (!process.env.API_KEY) {
-            return res.status(500).json({
+    if (!process.env.API_KEY) {
+      return res.status(500).json({
         success: false,
         message: "API key not configured"
-            });
-        }
+      });
+    }
     
     if (!apiKey || apiKey !== process.env.API_KEY) {
       return res.status(401).json({
@@ -87,39 +87,43 @@ module.exports = async (req, res) => {
       const totalScore = sanitizedData.totalScore || 0;
       const scorePercentage = sanitizedData.scorePercentage || 0;
       
-      const userIp = req.headers['x-forwarded-for'] || req.connection?.remoteAddress || null;
-      const userAgent = req.headers['user-agent'] || null;
-    
-      const [response] = await db
-        .insert(surveyResponses)
-        .values({
-          question1: sanitizedData.question1,
-          question2: sanitizedData.question2,
-          question3: sanitizedData.question3,
-          question4: sanitizedData.question4,
-          question5: sanitizedData.question5,
-          question6: sanitizedData.question6,
-          question7: sanitizedData.question7,
-          question8: sanitizedData.question8,
-          firstName: sanitizedData.firstName,
-          email: sanitizedData.email,
-          totalScore: sanitizedData.totalScore,
-          scorePercentage: sanitizedData.scorePercentage,
-          userIp: Array.isArray(userIp) ? userIp[0] : userIp,
-          userAgent: Array.isArray(userAgent) ? userAgent[0] : userAgent,
-        })
-        .returning();
+      const response = {
+        question1: sanitizedData.question1,
+        question2: sanitizedData.question2,
+        question3: sanitizedData.question3,
+        question4: sanitizedData.question4,
+        question5: sanitizedData.question5,
+        question6: sanitizedData.question6,
+        question7: sanitizedData.question7,
+        question8: sanitizedData.question8,
+        firstName: sanitizedData.firstName,
+        email: sanitizedData.email,
+        totalScore: totalScore,
+        scorePercentage: scorePercentage,
+        userIp: req.headers['x-forwarded-for'] || req.connection.remoteAddress || null,
+        userAgent: req.headers['user-agent'] || null
+      };
       
-      return res.status(201).json({ 
-        success: true, 
-        message: "Umfrage erfolgreich übermittelt"
+      // Insert into database
+      const [insertedResponse] = await db.insert(surveyResponses).values(response).returning();
+      
+      // Send webhook
+      await sendWebhook(response);
+      
+      return res.json({
+        success: true,
+        message: "Umfrage erfolgreich übermittelt",
+        data: {
+          id: insertedResponse.id,
+          scorePercentage: scorePercentage
+        }
       });
       
     } catch (error) {
-      console.error("Survey submission error:", error);
-      return res.status(400).json({
+      console.error('Database error:', error);
+      return res.status(500).json({
         success: false,
-        message: "Fehler beim Verarbeiten der Umfrage"
+        message: "Datenbankfehler beim Speichern der Antworten"
       });
     }
   }
@@ -129,10 +133,10 @@ module.exports = async (req, res) => {
       const responses = await db.select().from(surveyResponses);
       return res.json(responses);
     } catch (error) {
-      console.error("Error fetching responses:", error);
+      console.error('Database error:', error);
       return res.status(500).json({
         success: false,
-        message: "Fehler beim Laden der Antworten"
+        message: "Fehler beim Abrufen der Daten"
       });
     }
   }
@@ -151,7 +155,7 @@ function sanitizeInputs(data) {
         .toString()
         .trim()
         // Remove ALL shell metacharacters and command injection attempts
-        .replace(/[<>\"'&;|`$(){}[\]\\*?~!#^]/g, '')
+        .replace(/[<>"'&;|`$(){}[\]\\*?~!#^]/g, '')
         // Remove potential SQL injection patterns
         .replace(/(\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|UNION|SCRIPT)\b)/gi, '')
         // Remove newlines and control characters
@@ -165,4 +169,122 @@ function sanitizeInputs(data) {
   sanitized.scorePercentage = Math.max(0, Math.min(100, parseInt(data.scorePercentage) || 0));
   
   return sanitized;
+}
+
+async function sendWebhook(response) {
+  try {
+    if (!process.env.WEBHOOK_URL) {
+      console.log('No webhook URL configured, skipping webhook');
+      return;
+    }
+
+    const webhookData = {
+      timestamp: new Date().toISOString(),
+      survey_response: response,
+      labels: {
+        question1: getQuestion1Label(response.question1),
+        question2: getQuestion2Label(response.question2),
+        question3: getQuestion3Label(response.question3),
+        question4: getQuestion4Label(response.question4),
+        question5: getQuestion5Label(response.question5),
+        question6: getQuestion6Label(response.question6),
+        question7: getQuestion7Label(response.question7),
+        question8: getQuestion8Label(response.question8)
+      }
+    };
+
+    const webhookResponse = await fetch(process.env.WEBHOOK_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(webhookData)
+    });
+
+    if (!webhookResponse.ok) {
+      console.error('Webhook failed:', webhookResponse.status, webhookResponse.statusText);
+    }
+  } catch (error) {
+    console.error('Webhook error:', error);
+  }
+}
+
+function getQuestion1Label(value) {
+  const labels = {
+    'sehr-hoch': 'Sehr hoch',
+    'hoch': 'Hoch',
+    'mittel': 'Mittel',
+    'niedrig': 'Niedrig'
+  };
+  return labels[value] || value;
+}
+
+function getQuestion2Label(value) {
+  const labels = {
+    'sehr-viele': 'Sehr viele',
+    'viele': 'Viele',
+    'einige': 'Einige',
+    'wenige': 'Wenige'
+  };
+  return labels[value] || value;
+}
+
+function getQuestion3Label(value) {
+  const labels = {
+    'taeglich': 'Täglich',
+    'mehrmals-woche': 'Mehrmals pro Woche',
+    'woechentlich': 'Wöchentlich',
+    'selten-nie': 'Selten/Nie'
+  };
+  return labels[value] || value;
+}
+
+function getQuestion4Label(value) {
+  const labels = {
+    'sehr-stark': 'Sehr stark',
+    'stark': 'Stark',
+    'maessig': 'Mäßig',
+    'schwach': 'Schwach'
+  };
+  return labels[value] || value;
+}
+
+function getQuestion5Label(value) {
+  const labels = {
+    'sehr-erfolgreich': 'Sehr erfolgreich',
+    'erfolgreich': 'Erfolgreich',
+    'maessig-erfolgreich': 'Mäßig erfolgreich',
+    'wenig-erfolgreich': 'Wenig erfolgreich'
+  };
+  return labels[value] || value;
+}
+
+function getQuestion6Label(value) {
+  const labels = {
+    'sehr-hoch': 'Sehr hoch',
+    'hoch': 'Hoch',
+    'mittel': 'Mittel',
+    'niedrig': 'Niedrig'
+  };
+  return labels[value] || value;
+}
+
+function getQuestion7Label(value) {
+  const labels = {
+    'sehr-gut': 'Sehr gut',
+    'gut': 'Gut',
+    'ausreichend': 'Ausreichend',
+    'verbesserungsbedarf': 'Verbesserungsbedarf'
+  };
+  return labels[value] || value;
+}
+
+function getQuestion8Label(value) {
+  const labels = {
+    'sehr-hoch': 'Sehr hoch',
+    'hoch': 'Hoch',
+    'mittel': 'Mittel',
+    'niedrig': 'Niedrig'
+  };
+  return labels[value] || value;
 }
