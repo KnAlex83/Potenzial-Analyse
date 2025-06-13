@@ -47,9 +47,8 @@ module.exports = async (req, res) => {
   if (req.method === 'POST') {
        // API Authentication - Require API key for POST requests
     const apiKey = req.headers['x-api-key'] || req.headers['authorization']?.replace('Bearer ', '');
-    const validApiKey = process.env.API_KEY;
     
-    if (!validApiKey || apiKey !== validApiKey) {
+    if (!process.env.API_KEY || apiKey !== process.env.API_KEY) {
       return res.status(401).json({
         success: false,
         message: "Unauthorized access - API key required"
@@ -60,7 +59,7 @@ module.exports = async (req, res) => {
       const data = req.body;
       const sanitizedData = sanitizeInputs(data);
       
-            // Validate required survey questions first
+      // Validate required survey questions first
       const requiredQuestions = ['question1', 'question2', 'question3', 'question4', 'question5', 'question6', 'question7', 'question8'];
       for (const field of requiredQuestions) {
         if (!sanitizedData[field]) {
