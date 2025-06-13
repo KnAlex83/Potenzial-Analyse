@@ -1,4 +1,4 @@
-// Survey API - Version 2024-06-13-13-30 - Database Schema Fixed
+// Survey API - Version 2024-06-13-13-50 - Column Mapping Fixed
 const { Pool, neonConfig } = require('@neondatabase/serverless');
 const { drizzle } = require('drizzle-orm/neon-serverless');
 const { pgTable, text, serial, timestamp, integer } = require('drizzle-orm/pg-core');
@@ -9,7 +9,7 @@ const rateLimitStore = new Map();
 
 neonConfig.webSocketConstructor = ws;
 
-// Define schema directly in API file for Netlify compatibility
+// Define schema with correct column names matching database
 const surveyResponses = pgTable("survey_responses", {
   id: serial("id").primaryKey(),
   question1: text("question1").notNull(),
@@ -20,12 +20,12 @@ const surveyResponses = pgTable("survey_responses", {
   question6: text("question6").notNull(),
   question7: text("question7").notNull(),
   question8: text("question8").notNull(),
-  firstName: text("first_name").notNull(),
+  first_name: text("first_name").notNull(), // FIXED: Use actual database column name
   email: text("email").notNull(),
-  totalScore: integer("total_score").notNull(),
-  scorePercentage: integer("score_percentage").notNull(),
-  userIp: text("user_ip"),
-  userAgent: text("user_agent"),
+  total_score: integer("total_score").notNull(), // FIXED: Use actual database column name
+  score_percentage: integer("score_percentage").notNull(), // FIXED: Use actual database column name
+  user_ip: text("user_ip"),
+  user_agent: text("user_agent"),
   timestamp: timestamp("timestamp").defaultNow().notNull(),
 });
 
@@ -227,7 +227,7 @@ exports.handler = async (event, context) => {
       const maxScore = 32; // Maximum possible score
       const scorePercentage = Math.round((totalScore / maxScore) * 100);
 
-      // Enhanced security: Store sanitized data with metadata
+      // FIXED: Map to correct database column names
       const responseData = {
         question1: sanitizedData.question1,
         question2: sanitizedData.question2,
@@ -237,12 +237,12 @@ exports.handler = async (event, context) => {
         question6: sanitizedData.question6,
         question7: sanitizedData.question7,
         question8: sanitizedData.question8,
-        firstName: sanitizedData.firstName,
+        first_name: sanitizedData.firstName, // FIXED: Use database column name
         email: sanitizedData.email,
-        totalScore,
-        scorePercentage,
-        userIp: clientIP,
-        userAgent: headers['user-agent'] || null,
+        total_score: totalScore, // FIXED: Use database column name
+        score_percentage: scorePercentage, // FIXED: Use database column name
+        user_ip: clientIP, // FIXED: Use database column name
+        user_agent: headers['user-agent'] || null, // FIXED: Use database column name
       };
 
       // Database insertion with error handling
@@ -352,7 +352,7 @@ function validateInputStructure(data) {
     }
   }
   
-  // Required fields validation - FIXED: only firstName required, not lastName
+  // Required fields validation
   const requiredFields = ['question1', 'question2', 'question3', 'question4', 'question5', 'question6', 'question7', 'question8', 'firstName', 'email'];
   for (const field of requiredFields) {
     if (!data[field]) {
@@ -392,7 +392,7 @@ function sanitizeInputs(data) {
     }
   }
 
-  // Sanitize text fields with enhanced security - FIXED: only firstName, no lastName
+  // Sanitize text fields with enhanced security
   sanitized.firstName = sanitizeTextField(data.firstName, 'firstName', 100);
   sanitized.email = sanitizeEmail(data.email);
 
