@@ -86,90 +86,6 @@ function getQuestionScore(value, questionNumber) {
   return scoringMaps[questionNumber]?.[value] || 0;
 }
 
-async function sendWebhook(response) {
-  console.log('Webhook data prepared:', response);
-}
-
-function getQuestion1Label(value) {
-  const labels = {
-    'option1': 'Anfänger - Ich kenne die Grundlagen kaum',
-    'option2': 'Fortgeschritten - Ich habe ein solides Grundverständnis',
-    'option3': 'Experte - Ich verstehe die meisten Strategien',
-    'option4': 'Profi - Ich bin sehr versiert in Personal Branding'
-  };
-  return labels[value] || value;
-}
-
-function getQuestion2Label(value) {
-  const labels = {
-    'option1': '0-2 (Wenig bis gar keine)',
-    'option2': '3-5 (Einige potenzielle Kontakte)',
-    'option3': '6-10 (Regelmäßige Anfragen)',
-    'option4': '> 10 (Viele verpasste Chancen)'
-  };
-  return labels[value] || value;
-}
-
-function getQuestion3Label(value) {
-  const labels = {
-    'option1': 'Gar nicht sichtbar',
-    'option2': 'Sporadisch aktiv',
-    'option3': 'Regelmäßig präsent',
-    'option4': 'Sehr aktiv und engagiert',
-    'option5': 'Thought Leader in meiner Branche'
-  };
-  return labels[value] || value;
-}
-
-function getQuestion4Label(value) {
-  const labels = {
-    'option1': 'Kaum Resonanz',
-    'option2': 'Wenige Likes/Kommentare',
-    'option3': 'Moderate Interaktion',
-    'option4': 'Gute Resonanz',
-    'option5': 'Hohe Interaktionsraten'
-  };
-  return labels[value] || value;
-}
-
-function getQuestion5Label(value) {
-  const labels = {
-    'option1': 'Gar nicht',
-    'option2': 'Selten',
-    'option3': 'Gelegentlich',
-    'option4': 'Regelmäßig'
-  };
-  return labels[value] || value;
-}
-
-function getQuestion6Label(value) {
-  const labels = {
-    'option1': 'Sehr unzufrieden',
-    'option2': 'Unzufrieden',
-    'option3': 'Zufrieden'
-  };
-  return labels[value] || value;
-}
-
-function getQuestion7Label(value) {
-  const labels = {
-    'option1': '< 1h (Wenig Zeit)',
-    'option2': '1-3h (Moderate Zeit)',
-    'option3': '4-8h (Viel Zeit)',
-    'option4': '> 8h (Turbo-Transformation möglich)'
-  };
-  return labels[value] || value;
-}
-
-function getQuestion8Label(value) {
-  const labels = {
-    'option1': 'Sehr hoch',
-    'option2': 'Hoch',
-    'option3': 'Mittel'
-  };
-  return labels[value] || value;
-}
-
 exports.handler = async (event, context) => {
   const { httpMethod: method, headers, body } = event;
   
@@ -278,65 +194,23 @@ exports.handler = async (event, context) => {
 
       pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
-      // Use exact database column order: id, question1-4, user_ip, user_agent, timestamp, question5-7, first_name, email, question8, total_score, score_percentage
+      // Use only the core columns that exist in all environments
       const insertQuery = `
         INSERT INTO survey_responses (
-          question1, question2, question3, question4, user_ip, user_agent, 
-          question5, question6, question7, first_name, email, question8, 
-          total_score, score_percentage
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+          question1, question2, question3, question4, question5, question6, question7, question8,
+          first_name, email, total_score, score_percentage
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         RETURNING id;
       `;
 
       const values = [
-        sanitizedData.question1,
-        sanitizedData.question2, 
-        sanitizedData.question3,
-        sanitizedData.question4,
-        clientIP,
-        headers['user-agent'] || null,
-        sanitizedData.question5,
-        sanitizedData.question6,
-        sanitizedData.question7,
-        sanitizedData.firstName,
-        sanitizedData.email,
-        sanitizedData.question8,
-        totalScore,
-        scorePercentage
+        sanitizedData.question1, sanitizedData.question2, sanitizedData.question3, sanitizedData.question4,
+        sanitizedData.question5, sanitizedData.question6, sanitizedData.question7, sanitizedData.question8,
+        sanitizedData.firstName, sanitizedData.email, totalScore, scorePercentage
       ];
 
       const result = await pool.query(insertQuery, values);
       const insertedId = result.rows[0]?.id;
-      
-      // Send webhook with enhanced data
-      const webhookData = {
-        submission_id: insertedId,
-        question1: sanitizedData.question1,
-        question2: sanitizedData.question2,
-        question3: sanitizedData.question3,
-        question4: sanitizedData.question4,
-        question5: sanitizedData.question5,
-        question6: sanitizedData.question6,
-        question7: sanitizedData.question7,
-        question8: sanitizedData.question8,
-        first_name: sanitizedData.firstName,
-        email: sanitizedData.email,
-        total_score: totalScore,
-        score_percentage: scorePercentage,
-        question1_label: getQuestion1Label(sanitizedData.question1),
-        question2_label: getQuestion2Label(sanitizedData.question2),
-        question3_label: getQuestion3Label(sanitizedData.question3),
-        question4_label: getQuestion4Label(sanitizedData.question4),
-        question5_label: getQuestion5Label(sanitizedData.question5),
-        question6_label: getQuestion6Label(sanitizedData.question6),
-        question7_label: getQuestion7Label(sanitizedData.question7),
-        question8_label: getQuestion8Label(sanitizedData.question8),
-        timestamp: new Date().toISOString(),
-        user_ip: clientIP,
-        user_agent: headers['user-agent'] || null
-      };
-
-      await sendWebhook(webhookData);
       
       return {
         statusCode: 201,
@@ -357,8 +231,7 @@ exports.handler = async (event, context) => {
         body: JSON.stringify({
           success: false,
           message: "Datenbankfehler beim Speichern der Antworten",
-          error_id: generateErrorId(),
-          debug: error.message
+          error_id: generateErrorId()
         })
       };
     } finally {
