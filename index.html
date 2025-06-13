@@ -469,8 +469,8 @@
                     <div class="question-title">${question.title}</div>
                     <div class="radio-group">
                         ${question.options.map((option, index) => `
-                            <label class="radio-item ${answers[`question${currentStep}`] === option ? 'selected' : ''}" onclick="selectOption(${currentStep}, ${index})">
-                                <input type="radio" name="question${currentStep}" value="${option}" class="radio-input" ${answers[`question${currentStep}`] === option ? 'checked' : ''}>
+                           <label class="radio-item ${answers[`question${currentStep}`] === `option${index + 1}` ? 'selected' : ''}" onclick="selectOption(${currentStep}, ${index})">
+                                <input type="radio" name="question${currentStep}" value="option${index + 1}" class="radio-input" ${answers[`question${currentStep}`] === `option${index + 1}` ? 'checked' : ''}>
                                 <span class="radio-label">${option}</span>
                             </label>
                         `).join('')}
@@ -496,8 +496,8 @@
 
         function selectOption(questionNum, optionIndex) {
             const question = questions[questionNum - 1];
-            const option = question.options[optionIndex];
-            answers[`question${questionNum}`] = option;
+            const optionValue = `option${optionIndex + 1}`;
+            answers[`question${questionNum}`] = optionValue;
             renderCurrentStep();
         }
 
@@ -553,60 +553,24 @@
             nextBtn.disabled = true;
             nextBtn.textContent = 'Wird verarbeitet...';
 
-            const scores = {
-                // Question 1: Potenzial
-                'Kaum – ich starte gerade erst': 1,
-                'Einige – ich spüre, dass mehr möglich wäre': 2,
-                'Viele! Ich ahne, wieviel Potenzial brachliegt': 3,
-                'Massive Mengen – es hält mein Business zurück': 4,
-                
-                // Question 2: Zeit Investment
-                '< 2h (riskiert Stillstand)': 1,
-                '2-4h (Minimalaufwand für erste Schritte)': 2,
-                '5-8h (ideales Tempo für spürbare Veränderung)': 3,
-                '> 8h (Turbo-Transformation möglich)': 4,
-                
-                // Question 3: 3-Monats-Ziel
-                'Exakt messbar & terminiert (z.B. "Bis 30.09. 15 Leads/Monat via LinkedIn")': 5,
-                'Klarer Fokus (z.B. "Mein Webinar bis August launchbereit haben")': 4,
-                'Teilweise konkret (z.B. "Mehr Sichtbarkeit in meiner Branche")': 3,
-                'Vage (z.B. "Beruflich durchstarten")': 2,
-                'Kein Ziel / unsicher': 1,
-                
-                // Question 4: Vision
-                'Klare Skalierung (z.B. "Als Top-Expert:in bekannt, 50% mehr Umsatz automatisiert")': 5,
-                'Wachstum mit Plan (z.B. "Team aufbauen, internationale Kund:innen")': 4,
-                'Stabilisierung (z.B. "Konstante Anfragen ohne Akquise")': 3,
-                'Unklar (z.B. "Finanziell besser dastehen")': 2,
-                'Keine Vision': 1,
-                
-                // Question 5: Personal Branding Überzeugung
-                'Stimme VOLL zu (erkenne den systemischen Hebel)': 4,
-                'Stimme zu (sehe den Trend)': 3,
-                'Neutral': 2,
-                'Stimme nicht zu (glaube an veraltete Methoden)': 1,
-                
-                // Question 6: Umsetzungsbereitschaft
-                'Starte direkt durch – ich will keine Zeit verlieren!': 3,
-                'Werde viel umsetzen (ggf. mit Support)': 2,
-                'Brauche erst externe Motivation': 1,
-                
-                // Question 7: Veränderungswille
-                'Extrem! Ich bin bereit für den nächsten Level-Sprung': 4,
-                'Sehr – ich spüre die Dringlichkeit': 3,
-                'Mittel – aber ich zögere noch': 2,
-                'Gering – ich warte lieber ab': 1,
-                
-                // Question 8: Investment Bereitschaft
-                'JA – ich will JETZT durchstarten!': 3,
-                'Vielleicht – brauche Details zum ROI': 2,
-                'Nein – ich unterschätze noch den Hebel': 1
+            const getQuestionScore = (questionNum, optionValue) => {
+                const scoreMap = {
+                    1: { option1: 1, option2: 2, option3: 3, option4: 4 },
+                    2: { option1: 1, option2: 2, option3: 3, option4: 4 },
+                    3: { option1: 5, option2: 4, option3: 3, option4: 2, option5: 1 },
+                    4: { option1: 5, option2: 4, option3: 3, option4: 2, option5: 1 },
+                    5: { option1: 4, option2: 3, option3: 2, option4: 1 },
+                    6: { option1: 3, option2: 2, option3: 1 },
+                    7: { option1: 4, option2: 3, option3: 2, option4: 1 },
+                    8: { option1: 3, option2: 2, option3: 1 }
+                };
+                return scoreMap[questionNum][optionValue] || 0;
             };
 
             let totalScore = 0;
             for (let i = 1; i <= 8; i++) {
                 const answer = answers[`question${i}`];
-                totalScore += scores[answer] || 0;
+                totalScore += getQuestionScore(i, answer);
             }
 
             const maxScore = 30; // 4+4+5+5+4+3+4+3 = 32, but using 30 for better percentage distribution
