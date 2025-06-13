@@ -1,4 +1,4 @@
-// Survey API - Version 2024-06-13-12-00 - Enhanced Security Implementation
+// Survey API - Version 2024-06-13-12-30 - CORS Security Implementation
 const { Pool, neonConfig } = require('@neondatabase/serverless');
 const { drizzle } = require('drizzle-orm/neon-serverless');
 const { pgTable, text, serial, timestamp, integer } = require('drizzle-orm/pg-core');
@@ -30,10 +30,45 @@ const surveyResponses = pgTable("survey_responses", {
 });
 
 module.exports = async (req, res) => {
-  // Set comprehensive security headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  // Secure CORS configuration - only allow specific domains
+  const allowedOrigins = [
+    'https://potenzial.grovia-digital.com',
+    'https://www.potenzial.grovia-digital.com',
+    'https://grovia-digital.com',
+    'https://www.grovia-digital.com'
+  ];
+  
+  const origin = req.headers.origin;
+  
+  // Set CORS headers based on origin validation
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  } else if (!origin) {
+    // Allow same-origin requests (no origin header)
+    res.setHeader('Access-Control-Allow-Origin', 'https://potenzial.grovia-digital.com');
+  } else {
+    // Log unauthorized access attempts
+    console.warn('CORS violation detected:', {
+      timestamp: new Date().toISOString(),
+      origin: origin,
+      userAgent: req.headers['user-agent'],
+      ip: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
+      method: req.method,
+      path: req.path
+    });
+    
+    // Block unauthorized origins
+    return res.status(403).json({
+      success: false,
+      message: "Zugriff von dieser Domain nicht erlaubt",
+      error_id: generateErrorId()
+    });
+  }
+  
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-API-Key');
+  res.setHeader('Access-Control-Allow-Credentials', 'false');
+  res.setHeader('Access-Control-Max-Age', '300'); // 5 minutes preflight cache
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('X-XSS-Protection', '1; mode=block');
