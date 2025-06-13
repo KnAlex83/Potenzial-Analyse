@@ -47,6 +47,13 @@ module.exports = async (req, res) => {
   if (req.method === 'POST') {
     // API Authentication - Require API key for POST requests
     const apiKey = req.headers['x-api-key'] || req.headers['authorization']?.replace('Bearer ', '');
+  try {
+      const data = req.body;
+      
+      // ADD THIS LINE HERE:
+      const sanitizedData = sanitizeInputs(data);
+      
+      if (!data.firstName || !data.email) {
     const validApiKey = process.env.API_KEY;
     
     if (!validApiKey || apiKey !== validApiKey) {
@@ -71,21 +78,21 @@ module.exports = async (req, res) => {
       const totalScore = data.totalScore || 0;
       const scorePercentage = data.scorePercentage || 0;
       
-      const [response] = await db
+            const [response] = await db
         .insert(surveyResponses)
         .values({
-          question1: data.question1,
-          question2: data.question2,
-          question3: data.question3,
-          question4: data.question4,
-          question5: data.question5,
-          question6: data.question6,
-          question7: data.question7,
-          question8: data.question8,
-          firstName: data.firstName,
-          email: data.email,
-          totalScore,
-          scorePercentage,
+          question1: sanitizedData.question1,
+          question2: sanitizedData.question2,
+          question3: sanitizedData.question3,
+          question4: sanitizedData.question4,
+          question5: sanitizedData.question5,
+          question6: sanitizedData.question6,
+          question7: sanitizedData.question7,
+          question8: sanitizedData.question8,
+          firstName: sanitizedData.firstName,
+          email: sanitizedData.email,
+          totalScore: sanitizedData.totalScore,
+          scorePercentage: sanitizedData.scorePercentage,
           userIp: Array.isArray(userIp) ? userIp[0] : userIp,
           userAgent: Array.isArray(userAgent) ? userAgent[0] : userAgent,
         })
