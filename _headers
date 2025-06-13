@@ -1,6 +1,17 @@
-/*
+# Netlify Edge Security Headers
+/api/*
   X-Frame-Options: DENY
   X-Content-Type-Options: nosniff
-  Referrer-Policy: no-referrer-when-downgrade
-  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
-  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self';
+  X-XSS-Protection: 1; mode=block
+  Referrer-Policy: strict-origin-when-cross-origin
+  Content-Security-Policy: default-src 'none'; script-src 'none'; object-src 'none'; base-uri 'none'
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=(), usb=(), accelerometer=(), gyroscope=(), magnetometer=()
+
+# CORS restrictions at edge level
+/api/survey.js
+  Access-Control-Allow-Origin: https://potenzial.grovia-digital.com
+  Access-Control-Allow-Methods: POST, OPTIONS
+  Access-Control-Allow-Headers: Content-Type, X-API-Key
+  Access-Control-Max-Age: 300
+  Access-Control-Allow-Credentials: false
