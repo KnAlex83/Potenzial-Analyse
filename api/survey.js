@@ -154,11 +154,8 @@ function sanitizeInputs(data) {
       sanitized[field] = data[field]
         .toString()
         .trim()
-        // Remove ALL shell metacharacters and command injection attempts
         .replace(/[<>"'&;|`$(){}[\]\\*?~!#^]/g, '')
-        // Remove potential SQL injection patterns
         .replace(/(\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|UNION|SCRIPT)\b)/gi, '')
-        // Remove newlines and control characters
         .replace(/[\r\n\t\f\v]/g, ' ')
         .substring(0, field === 'email' ? 255 : 100)
         .trim();
