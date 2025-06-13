@@ -28,7 +28,7 @@ const surveyResponses = pgTable("survey_responses", {
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-API-Key');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -45,15 +45,8 @@ module.exports = async (req, res) => {
   const db = drizzle({ client: pool });
 
   if (req.method === 'POST') {
-    // API Authentication - Require API key for POST requests
+       // API Authentication - Require API key for POST requests
     const apiKey = req.headers['x-api-key'] || req.headers['authorization']?.replace('Bearer ', '');
-  try {
-      const data = req.body;
-      
-      // ADD THIS LINE HERE:
-      const sanitizedData = sanitizeInputs(data);
-      
-      if (!data.firstName || !data.email) {
     const validApiKey = process.env.API_KEY;
     
     if (!validApiKey || apiKey !== validApiKey) {
@@ -62,7 +55,13 @@ module.exports = async (req, res) => {
         message: "Unauthorized access - API key required"
       });
     }
+    
     try {
+      const data = req.body;
+      const sanitizedData = sanitizeInputs(data);
+      
+      if (!sanitizedData.firstName || !sanitizedData.email) {
+    
       const data = req.body;
       
       if (!data.firstName || !data.email) {
@@ -75,8 +74,8 @@ module.exports = async (req, res) => {
       const userIp = req.headers['x-forwarded-for'] || req.connection?.remoteAddress || null;
       const userAgent = req.headers['user-agent'] || null;
       
-      const totalScore = data.totalScore || 0;
-      const scorePercentage = data.scorePercentage || 0;
+      const totalScore = sanitizedData.totalScore || 0;
+      const scorePercentage = sanitizedData.scorePercentage || 0;
       
             const [response] = await db
         .insert(surveyResponses)
