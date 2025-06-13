@@ -45,6 +45,16 @@ module.exports = async (req, res) => {
   const db = drizzle({ client: pool });
 
   if (req.method === 'POST') {
+    // API Authentication - Require API key for POST requests
+    const apiKey = req.headers['x-api-key'] || req.headers['authorization']?.replace('Bearer ', '');
+    const validApiKey = process.env.API_KEY;
+    
+    if (!validApiKey || apiKey !== validApiKey) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized access - API key required"
+      });
+    }
     try {
       const data = req.body;
       
@@ -110,3 +120,30 @@ module.exports = async (req, res) => {
 
   return res.status(405).json({ message: 'Method not allowed' });
 };
+
+function sanitizeInputs(data) {
+  const sanitized = {};
+  
+  const stringFields = ['question1', 'question2', 'question3', 'question4', 'question5', 'question6', 'question7', 'question8', 'firstName', 'email'];
+  
+  for (const field of stringFields) {
+    if (data[field]) {
+      sanitized[field] = data[field]
+        .toString()
+        .trim()
+        // Remove ALL shell metacharacters and command injection attempts
+        .replace(/[<>\"'&;|`$(){}[\]\\*?~!#^]/g, '')
+        // Remove potential SQL injection patterns
+        .replace(/(\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|UNION|SCRIPT)\b)/gi, '')
+        // Remove newlines and control characters
+        .replace(/[\r\n\t\f\v]/g, ' ')
+        .substring(0, field === 'email' ? 255 : 100)
+        .trim();
+    }
+  }
+  
+  sanitized.totalScore = Math.max(0, Math.min(32, parseInt(data.totalScore) || 0));
+  sanitized.scorePercentage = Math.max(0, Math.min(100, parseInt(data.scorePercentage) || 0));
+  
+  return sanitized;
+}
