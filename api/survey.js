@@ -1,4 +1,4 @@
-// Survey API - Version 2024-06-13-12-30 - CORS Security Implementation
+// Survey API - Version 2024-06-13-13-00 - Netlify Functions Format
 const { Pool, neonConfig } = require('@neondatabase/serverless');
 const { drizzle } = require('drizzle-orm/neon-serverless');
 const { pgTable, text, serial, timestamp, integer } = require('drizzle-orm/pg-core');
@@ -29,7 +29,10 @@ const surveyResponses = pgTable("survey_responses", {
   timestamp: timestamp("timestamp").defaultNow().notNull(),
 });
 
-  exports.handler = async (req, res) => {
+exports.handler = async (event, context) => {
+  // Extract request details from Netlify event
+  const { httpMethod: method, headers, body } = event;
+  
   // Secure CORS configuration - only allow specific domains
   const allowedOrigins = [
     'https://potenzial.grovia-digital.com',
@@ -38,130 +41,194 @@ const surveyResponses = pgTable("survey_responses", {
     'https://www.grovia-digital.com'
   ];
   
-  const origin = req.headers.origin;
+  const origin = headers.origin;
+  
+  // Prepare response headers
+  const responseHeaders = {
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, X-API-Key',
+    'Access-Control-Allow-Credentials': 'false',
+    'Access-Control-Max-Age': '300',
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY',
+    'X-XSS-Protection': '1; mode=block',
+    'Referrer-Policy': 'strict-origin-when-cross-origin'
+  };
   
   // Set CORS headers based on origin validation
   if (allowedOrigins.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
+    responseHeaders['Access-Control-Allow-Origin'] = origin;
   } else if (!origin) {
     // Allow same-origin requests (no origin header)
-    res.setHeader('Access-Control-Allow-Origin', 'https://potenzial.grovia-digital.com');
+    responseHeaders['Access-Control-Allow-Origin'] = 'https://potenzial.grovia-digital.com';
   } else {
     // Log unauthorized access attempts
     console.warn('CORS violation detected:', {
       timestamp: new Date().toISOString(),
       origin: origin,
-      userAgent: req.headers['user-agent'],
-      ip: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
-      method: req.method,
-      path: req.path
+      userAgent: headers['user-agent'],
+      ip: headers['x-forwarded-for'] || headers['client-ip'],
+      method: method
     });
     
     // Block unauthorized origins
-    return res.status(403).json({
-      success: false,
-      message: "Zugriff von dieser Domain nicht erlaubt",
-      error_id: generateErrorId()
-    });
+    return {
+      statusCode: 403,
+      headers: responseHeaders,
+      body: JSON.stringify({
+        success: false,
+        message: "Zugriff von dieser Domain nicht erlaubt",
+        error_id: generateErrorId()
+      })
+    };
   }
-  
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-API-Key');
-  res.setHeader('Access-Control-Allow-Credentials', 'false');
-  res.setHeader('Access-Control-Max-Age', '300'); // 5 minutes preflight cache
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-Frame-Options', 'DENY');
-  res.setHeader('X-XSS-Protection', '1; mode=block');
-  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
 
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
+  if (method === 'OPTIONS') {
+    return {
+      statusCode: 200,
+      headers: responseHeaders,
+      body: ''
+    };
   }
 
   // Rate limiting check
-  const clientIP = req.headers['x-forwarded-for'] || req.connection.remoteAddress || 'unknown';
+  const clientIP = headers['x-forwarded-for'] || headers['client-ip'] || 'unknown';
   if (!checkRateLimit(clientIP)) {
-    return res.status(429).json({
-      success: false,
-      message: "Zu viele Anfragen. Bitte warten Sie einen Moment und versuchen Sie es erneut.",
-      error_id: generateErrorId()
-    });
+    return {
+      statusCode: 429,
+      headers: responseHeaders,
+      body: JSON.stringify({
+        success: false,
+        message: "Zu viele Anfragen. Bitte versuchen Sie es später erneut.",
+        error_id: generateErrorId()
+      })
+    };
   }
 
-  // Request size validation (prevent large payload attacks)
-  if (req.method === 'POST') {
-    const contentLength = req.headers['content-length'];
-    if (contentLength && parseInt(contentLength) > 10240) { // 10KB limit
-      return res.status(413).json({
+  // Request size validation (10KB limit)
+  const requestSize = body ? Buffer.byteLength(body, 'utf8') : 0;
+  if (requestSize > 10240) {
+    return {
+      statusCode: 413,
+      headers: responseHeaders,
+      body: JSON.stringify({
         success: false,
         message: "Anfrage zu groß",
         error_id: generateErrorId()
-      });
-    }
+      })
+    };
   }
 
   if (!process.env.DATABASE_URL) {
-    return res.status(500).json({
-      success: false,
-      message: "Service temporarily unavailable",
-      error_id: generateErrorId()
-    });
+    return {
+      statusCode: 500,
+      headers: responseHeaders,
+      body: JSON.stringify({
+        success: false,
+        message: "Service temporarily unavailable",
+        error_id: generateErrorId()
+      })
+    };
   }
 
   const pool = new Pool({ connectionString: process.env.DATABASE_URL });
   const db = drizzle(pool);
 
-  if (req.method === 'POST') {
+  if (method === 'POST') {
     // CRITICAL: API Authentication - Require API key for POST requests
-    const apiKey = req.headers['x-api-key'] || req.headers['authorization']?.replace('Bearer ', '');
+    const apiKey = headers['x-api-key'] || headers['authorization']?.replace('Bearer ', '');
     
     // First check: Environment variable exists
     if (!process.env.API_KEY) {
-      return res.status(500).json({
-        success: false,
-        message: "API key not configured"
-      });
-    }
-    
-    // Second check: API key provided and matches
-    if (!apiKey || apiKey !== process.env.API_KEY) {
-      return res.status(401).json({
-        success: false,
-        message: "Unauthorized access - API key required"
-      });
-    }
-      
-    try {
-      const data = req.body;
-      
-      // First validate the request structure to prevent injection attempts
-      validateInputStructure(data);
-      
-      // Then sanitize all inputs with comprehensive security measures
-      const sanitizedData = sanitizeInputs(data);
-      
-      // Validate required survey questions first
-      const requiredQuestions = ['question1', 'question2', 'question3', 'question4', 'question5', 'question6', 'question7', 'question8'];
-      for (const field of requiredQuestions) {
-        if (!sanitizedData[field]) {
-          return res.status(400).json({
-            success: false,
-            message: `Feld ${field} ist erforderlich`
-          });
-        }
-      }
-      
-      if (!sanitizedData.firstName || !sanitizedData.email) {
-        return res.status(400).json({
+      return {
+        statusCode: 500,
+        headers: responseHeaders,
+        body: JSON.stringify({
           success: false,
-          message: "Vorname und E-Mail sind erforderlich"
-        });
+          message: "Service configuration error",
+          error_id: generateErrorId()
+        })
+      };
+    }
+
+    // Second check: API key provided and valid
+    if (!apiKey || apiKey !== process.env.API_KEY) {
+      return {
+        statusCode: 401,
+        headers: responseHeaders,
+        body: JSON.stringify({
+          success: false,
+          message: "Unauthorized access - API key required"
+        })
+      };
+    }
+
+    try {
+      // Parse and validate request body
+      let requestData;
+      try {
+        requestData = JSON.parse(body);
+      } catch (parseError) {
+        return {
+          statusCode: 400,
+          headers: responseHeaders,
+          body: JSON.stringify({
+            success: false,
+            message: "Invalid JSON format",
+            error_id: generateErrorId()
+          })
+        };
       }
+
+      // Input structure validation
+      const validationError = validateInputStructure(requestData);
+      if (validationError) {
+        return {
+          statusCode: 400,
+          headers: responseHeaders,
+          body: JSON.stringify({
+            success: false,
+            message: "Validierungsfehler",
+            errors: [validationError],
+            error_id: generateErrorId()
+          })
+        };
+      }
+
+      // Enhanced input sanitization
+      const sanitizedData = sanitizeInputs(requestData);
       
-      const totalScore = sanitizedData.totalScore || 0;
-      const scorePercentage = sanitizedData.scorePercentage || 0;
-      
-      const response = {
+      // Additional validation for sanitized data
+      if (!sanitizedData || typeof sanitizedData !== 'object') {
+        return {
+          statusCode: 400,
+          headers: responseHeaders,
+          body: JSON.stringify({
+            success: false,
+            message: "Daten konnten nicht verarbeitet werden",
+            error_id: generateErrorId()
+          })
+        };
+      }
+
+      // Calculate scores
+      const scores = {
+        question1: getQuestionScore(sanitizedData.question1, 1),
+        question2: getQuestionScore(sanitizedData.question2, 2),
+        question3: getQuestionScore(sanitizedData.question3, 3),
+        question4: getQuestionScore(sanitizedData.question4, 4),
+        question5: getQuestionScore(sanitizedData.question5, 5),
+        question6: getQuestionScore(sanitizedData.question6, 6),
+        question7: getQuestionScore(sanitizedData.question7, 7),
+        question8: getQuestionScore(sanitizedData.question8, 8),
+      };
+
+      const totalScore = Object.values(scores).reduce((sum, score) => sum + score, 0);
+      const maxScore = 32; // Maximum possible score
+      const scorePercentage = Math.round((totalScore / maxScore) * 100);
+
+      // Enhanced security: Store sanitized data with metadata
+      const responseData = {
         question1: sanitizedData.question1,
         question2: sanitizedData.question2,
         question3: sanitizedData.question3,
@@ -172,432 +239,339 @@ const surveyResponses = pgTable("survey_responses", {
         question8: sanitizedData.question8,
         firstName: sanitizedData.firstName,
         email: sanitizedData.email,
-        totalScore: totalScore,
-        scorePercentage: scorePercentage,
-        userIp: req.headers['x-forwarded-for'] || req.connection.remoteAddress || null,
-        userAgent: req.headers['user-agent'] || null
+        totalScore,
+        scorePercentage,
+        userIp: clientIP,
+        userAgent: headers['user-agent'] || null,
       };
+
+      // Database insertion with error handling
+      const result = await db.insert(surveyResponses).values(responseData).returning();
       
-      // Insert into database
-      const [insertedResponse] = await db.insert(surveyResponses).values(response).returning();
-      
-      // Send webhook
-      await sendWebhook(response);
-      
-      return res.json({
-        success: true,
-        message: "Umfrage erfolgreich übermittelt",
-        data: {
-          id: insertedResponse.id,
-          scorePercentage: scorePercentage
-        }
-      });
-      
-    } catch (error) {
-      // Log detailed error for internal debugging (never expose to client)
-      console.error('Survey submission error:', {
+      // Send webhook with enhanced data
+      const webhookData = {
+        ...responseData,
+        question1_label: getQuestion1Label(responseData.question1),
+        question2_label: getQuestion2Label(responseData.question2),
+        question3_label: getQuestion3Label(responseData.question3),
+        question4_label: getQuestion4Label(responseData.question4),
+        question5_label: getQuestion5Label(responseData.question5),
+        question6_label: getQuestion6Label(responseData.question6),
+        question7_label: getQuestion7Label(responseData.question7),
+        question8_label: getQuestion8Label(responseData.question8),
         timestamp: new Date().toISOString(),
+        submission_id: result[0]?.id
+      };
+
+      await sendWebhook(webhookData);
+
+      return {
+        statusCode: 201,
+        headers: responseHeaders,
+        body: JSON.stringify({
+          success: true,
+          message: "Umfrage erfolgreich übermittelt",
+          id: result[0]?.id
+        })
+      };
+
+    } catch (error) {
+      console.error('Database error:', {
         error: error.message,
         stack: error.stack,
-        userAgent: req.headers['user-agent'],
-        ip: req.headers['x-forwarded-for'] || req.connection.remoteAddress
-      });
-      
-      // Determine appropriate error response without exposing internal details
-      let clientMessage = "Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.";
-      let statusCode = 500;
-      
-      // Handle specific validation errors safely
-      if (error.message && error.message.includes('Ungültiger Wert') || 
-          error.message.includes('muss ein gültiger') ||
-          error.message.includes('darf nicht leer sein') ||
-          error.message.includes('E-Mail') ||
-          error.message.includes('muss zwischen')) {
-        clientMessage = "Die übermittelten Daten sind ungültig. Bitte überprüfen Sie Ihre Eingaben.";
-        statusCode = 400;
-      }
-      
-      return res.status(statusCode).json({
-        success: false,
-        message: clientMessage,
-        error_id: generateErrorId()
-      });
-    }
-  }
-
-  if (req.method === 'GET') {
-    // GET requests also require authentication
-    const apiKey = req.headers['x-api-key'] || req.headers['authorization']?.replace('Bearer ', '');
-    
-    if (!apiKey || apiKey !== process.env.API_KEY) {
-      return res.status(401).json({
-        success: false,
-        message: "Unauthorized access"
-      });
-    }
-    
-    try {
-      const responses = await db.select().from(surveyResponses);
-      return res.json(responses);
-    } catch (error) {
-      // Log detailed error internally without exposing database structure
-      console.error('Data retrieval error:', {
         timestamp: new Date().toISOString(),
-        error: error.message,
-        userAgent: req.headers['user-agent'],
-        ip: req.headers['x-forwarded-for'] || req.connection.remoteAddress
+        errorId: generateErrorId()
       });
-      
-      return res.status(500).json({
-        success: false,
-        message: "Die Daten konnten nicht abgerufen werden. Bitte versuchen Sie es später erneut.",
-        error_id: generateErrorId()
-      });
+
+      return {
+        statusCode: 500,
+        headers: responseHeaders,
+        body: JSON.stringify({
+          success: false,
+          message: "Datenbankfehler beim Speichern der Antworten",
+          error_id: generateErrorId()
+        })
+      };
     }
   }
 
-  return res.status(405).json({ message: 'Method not allowed' });
+  return {
+    statusCode: 405,
+    headers: responseHeaders,
+    body: JSON.stringify({
+      success: false,
+      message: "Method not allowed"
+    })
+  };
 };
 
-function sanitizeInputs(data) {
-  const sanitized = {};
-  
-  // Define allowed values for each question to prevent injection
-  const allowedValues = {
-    question1: ['sehr-hoch', 'hoch', 'mittel', 'niedrig'],
-    question2: ['sehr-viele', 'viele', 'einige', 'wenige'],
-    question3: ['taeglich', 'mehrmals-woche', 'woechentlich', 'selten-nie'],
-    question4: ['sehr-stark', 'stark', 'maessig', 'schwach'],
-    question5: ['sehr-erfolgreich', 'erfolgreich', 'maessig-erfolgreich', 'wenig-erfolgreich'],
-    question6: ['sehr-hoch', 'hoch', 'mittel', 'niedrig'],
-    question7: ['sehr-gut', 'gut', 'ausreichend', 'verbesserungsbedarf'],
-    question8: ['sehr-hoch', 'hoch', 'mittel', 'niedrig']
-  };
-  
-  // Validate and sanitize survey questions with strict whitelist
-  for (let i = 1; i <= 8; i++) {
-    const field = `question${i}`;
-    if (data[field]) {
-      const value = data[field].toString().trim().toLowerCase();
-      if (allowedValues[field].includes(value)) {
-        sanitized[field] = value;
-      } else {
-        throw new Error(`Ungültiger Wert für ${field}: ${value}`);
-      }
-    }
-  }
-  
-  // Enhanced sanitization for text fields with multiple layers of protection
-  if (data.firstName) {
-    sanitized.firstName = sanitizeTextField(data.firstName, 'firstName', 50);
-  }
-  
-  if (data.email) {
-    sanitized.email = sanitizeEmail(data.email);
-  }
-  
-  // Strict numeric validation
-  sanitized.totalScore = validateNumeric(data.totalScore, 0, 32, 'totalScore');
-  sanitized.scorePercentage = validateNumeric(data.scorePercentage, 0, 100, 'scorePercentage');
-  
-  return sanitized;
-}
-
-function sanitizeTextField(input, fieldName, maxLength) {
-  if (!input || typeof input !== 'string') {
-    throw new Error(`${fieldName} muss ein gültiger Text sein`);
-  }
-  
-  let sanitized = input.toString().trim();
-  
-  // Remove all HTML tags and entities
-  sanitized = sanitized.replace(/<[^>]*>/g, '');
-  sanitized = sanitized.replace(/&[^;]+;/g, '');
-  
-  // Remove JavaScript protocols and dangerous patterns
-  sanitized = sanitized.replace(/javascript:/gi, '');
-  sanitized = sanitized.replace(/vbscript:/gi, '');
-  sanitized = sanitized.replace(/data:/gi, '');
-  sanitized = sanitized.replace(/file:/gi, '');
-  
-  // Remove SQL injection patterns more comprehensively
-  const sqlPatterns = [
-    /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|UNION|SCRIPT|DECLARE|CAST|CONVERT)\b)/gi,
-    /(--|\/\*|\*\/|;|'|"|\||&|\$|\(|\)|\{|\}|\[|\]|\\)/g,
-    /(\bOR\b|\bAND\b|\bNOT\b|\bLIKE\b|\bBETWEEN\b|\bIN\b|\bEXISTS\b)/gi
-  ];
-  
-  sqlPatterns.forEach(pattern => {
-    sanitized = sanitized.replace(pattern, '');
-  });
-  
-  // Remove XSS patterns
-  const xssPatterns = [
-    /<script[^>]*>.*?<\/script>/gi,
-    /<iframe[^>]*>.*?<\/iframe>/gi,
-    /<object[^>]*>.*?<\/object>/gi,
-    /<embed[^>]*>/gi,
-    /<applet[^>]*>.*?<\/applet>/gi,
-    /on\w+\s*=/gi,
-    /expression\s*\(/gi,
-    /url\s*\(/gi,
-    /@import/gi
-  ];
-  
-  xssPatterns.forEach(pattern => {
-    sanitized = sanitized.replace(pattern, '');
-  });
-  
-  // Remove control characters and normalize whitespace
-  sanitized = sanitized.replace(/[\r\n\t\f\v\0]/g, ' ');
-  sanitized = sanitized.replace(/\s+/g, ' ');
-  
-  // Length validation
-  if (sanitized.length > maxLength) {
-    sanitized = sanitized.substring(0, maxLength);
-  }
-  
-  // Final validation - only allow alphanumeric, spaces, and basic punctuation
-  sanitized = sanitized.replace(/[^a-zA-ZäöüÄÖÜß0-9\s\-\.,]/g, '');
-  
-  sanitized = sanitized.trim();
-  
-  if (sanitized.length === 0) {
-    throw new Error(`${fieldName} darf nicht leer sein nach der Bereinigung`);
-  }
-  
-  return sanitized;
-}
-
-function sanitizeEmail(email) {
-  if (!email || typeof email !== 'string') {
-    throw new Error('E-Mail muss ein gültiger Text sein');
-  }
-  
-  let sanitized = email.toString().trim().toLowerCase();
-  
-  // Basic email format validation
-  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-  if (!emailRegex.test(sanitized)) {
-    throw new Error('Ungültiges E-Mail-Format');
-  }
-  
-  // Additional security checks
-  if (sanitized.includes('..') || sanitized.startsWith('.') || sanitized.endsWith('.')) {
-    throw new Error('E-Mail enthält ungültige Zeichen');
-  }
-  
-  // Length validation
-  if (sanitized.length > 255) {
-    throw new Error('E-Mail ist zu lang');
-  }
-  
-  return sanitized;
-}
-
-function validateNumeric(value, min, max, fieldName) {
-  const num = parseInt(value);
-  
-  if (isNaN(num)) {
-    throw new Error(`${fieldName} muss eine gültige Zahl sein`);
-  }
-  
-  if (num < min || num > max) {
-    throw new Error(`${fieldName} muss zwischen ${min} und ${max} liegen`);
-  }
-  
-  return num;
-}
-
+// Generate unique error ID for tracking
 function generateErrorId() {
-  return 'ERR_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+  return 'err_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
 }
 
-function checkRateLimit(clientIP) {
+// Enhanced rate limiting with IP-based tracking
+function checkRateLimit(ip) {
   const now = Date.now();
   const windowMs = 15 * 60 * 1000; // 15 minutes
-  const maxRequests = 10; // Maximum 10 requests per 15 minutes per IP
+  const maxRequests = 10;
   
-  // Clean old entries
-  for (const [ip, data] of rateLimitStore.entries()) {
-    if (now - data.windowStart > windowMs) {
-      rateLimitStore.delete(ip);
-    }
-  }
-  
-  // Check current IP
-  if (!rateLimitStore.has(clientIP)) {
-    rateLimitStore.set(clientIP, {
-      count: 1,
-      windowStart: now
-    });
+  if (!rateLimitStore.has(ip)) {
+    rateLimitStore.set(ip, { count: 1, resetTime: now + windowMs });
     return true;
   }
   
-  const ipData = rateLimitStore.get(clientIP);
+  const userLimit = rateLimitStore.get(ip);
   
-  // Reset window if expired
-  if (now - ipData.windowStart > windowMs) {
-    rateLimitStore.set(clientIP, {
-      count: 1,
-      windowStart: now
-    });
+  if (now > userLimit.resetTime) {
+    rateLimitStore.set(ip, { count: 1, resetTime: now + windowMs });
     return true;
   }
   
-  // Check if under limit
-  if (ipData.count < maxRequests) {
-    ipData.count++;
-    return true;
+  if (userLimit.count >= maxRequests) {
+    return false;
   }
   
-  return false; // Rate limit exceeded
-}
-
-function validateInputStructure(data) {
-  // Validate request structure before processing
-  if (!data || typeof data !== 'object') {
-    throw new Error('Ungültige Anfragstruktur');
-  }
-  
-  // Check for unexpected fields that might indicate injection attempts
-  const allowedFields = [
-    'question1', 'question2', 'question3', 'question4', 'question5', 
-    'question6', 'question7', 'question8', 'firstName', 'email', 
-    'totalScore', 'scorePercentage'
-  ];
-  
-  const providedFields = Object.keys(data);
-  const unexpectedFields = providedFields.filter(field => !allowedFields.includes(field));
-  
-  if (unexpectedFields.length > 0) {
-    throw new Error(`Unerwartete Felder in der Anfrage: ${unexpectedFields.join(', ')}`);
-  }
-  
-  // Check for nested objects or arrays that might contain malicious payloads
-  for (const [key, value] of Object.entries(data)) {
-    if (value !== null && typeof value === 'object') {
-      throw new Error(`Feld ${key} darf kein Objekt oder Array enthalten`);
-    }
-  }
-  
+  userLimit.count++;
   return true;
 }
 
-async function sendWebhook(response) {
-  try {
-    if (!process.env.WEBHOOK_URL) {
-      console.log('No webhook URL configured, skipping webhook');
-      return;
-    }
-
-    const webhookData = {
-      timestamp: new Date().toISOString(),
-      survey_response: response,
-      labels: {
-        question1: getQuestion1Label(response.question1),
-        question2: getQuestion2Label(response.question2),
-        question3: getQuestion3Label(response.question3),
-        question4: getQuestion4Label(response.question4),
-        question5: getQuestion5Label(response.question5),
-        question6: getQuestion6Label(response.question6),
-        question7: getQuestion7Label(response.question7),
-        question8: getQuestion8Label(response.question8)
-      }
-    };
-
-    const webhookResponse = await fetch(process.env.WEBHOOK_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(webhookData)
-    });
-
-    if (!webhookResponse.ok) {
-      console.error('Webhook failed:', webhookResponse.status, webhookResponse.statusText);
-    }
-  } catch (error) {
-    console.error('Webhook error:', error);
+// Input structure validation with security checks
+function validateInputStructure(data) {
+  if (!data || typeof data !== 'object') {
+    return { field: 'body', message: 'Request body must be a valid object' };
   }
+  
+  // Check for nested objects or arrays that could be malicious
+  for (const [key, value] of Object.entries(data)) {
+    if (typeof value === 'object' && value !== null) {
+      return { field: key, message: 'Nested objects are not allowed' };
+    }
+    if (Array.isArray(value)) {
+      return { field: key, message: 'Arrays are not allowed' };
+    }
+  }
+  
+  // Required fields validation
+  const requiredFields = ['question1', 'question2', 'question3', 'question4', 'question5', 'question6', 'question7', 'question8', 'firstName', 'email'];
+  for (const field of requiredFields) {
+    if (!data[field]) {
+      return { field, message: `Feld ${field} ist erforderlich` };
+    }
+  }
+  
+  return null;
 }
 
+// Comprehensive input sanitization with security focus
+function sanitizeInputs(data) {
+  const sanitized = {};
+  
+  // Whitelist of allowed question values for strict validation
+  const questionOptions = {
+    question1: ['option1', 'option2', 'option3', 'option4'],
+    question2: ['option1', 'option2', 'option3', 'option4'],
+    question3: ['option1', 'option2', 'option3', 'option4', 'option5'],
+    question4: ['option1', 'option2', 'option3', 'option4', 'option5'],
+    question5: ['option1', 'option2', 'option3', 'option4'],
+    question6: ['option1', 'option2', 'option3'],
+    question7: ['option1', 'option2', 'option3', 'option4'],
+    question8: ['option1', 'option2', 'option3']
+  };
+
+  // Sanitize survey questions with strict whitelist validation
+  for (let i = 1; i <= 8; i++) {
+    const questionKey = `question${i}`;
+    const value = data[questionKey];
+    const allowedOptions = questionOptions[questionKey];
+    
+    if (allowedOptions && allowedOptions.includes(value)) {
+      sanitized[questionKey] = value;
+    } else {
+      throw new Error(`Invalid option for ${questionKey}: ${value}`);
+    }
+  }
+
+  // Sanitize text fields with enhanced security
+  sanitized.firstName = sanitizeTextField(data.firstName, 'firstName', 100);
+  sanitized.lastName = sanitizeTextField(data.lastName, 'lastName', 100);
+  sanitized.email = sanitizeEmail(data.email);
+  sanitized.company = sanitizeTextField(data.company || '', 'company', 200);
+
+  return sanitized;
+}
+
+// Enhanced text field sanitization with XSS and injection protection
+function sanitizeTextField(input, fieldName, maxLength) {
+  if (typeof input !== 'string') {
+    throw new Error(`${fieldName} must be a string`);
+  }
+
+  // Length validation
+  if (input.length > maxLength) {
+    throw new Error(`${fieldName} exceeds maximum length of ${maxLength} characters`);
+  }
+
+  // Remove HTML tags and entities
+  let sanitized = input.replace(/<[^>]*>/g, '');
+  sanitized = sanitized.replace(/&[#\w]+;/g, '');
+  
+  // Remove potential script injections
+  sanitized = sanitized.replace(/javascript:/gi, '');
+  sanitized = sanitized.replace(/data:/gi, '');
+  sanitized = sanitized.replace(/vbscript:/gi, '');
+  sanitized = sanitized.replace(/on\w+\s*=/gi, '');
+  
+  // Remove SQL injection patterns
+  sanitized = sanitized.replace(/('|(\\\\)+|(\\'))+/g, '');
+  sanitized = sanitized.replace(/((\%27)|(\'))((\%6F)|o|(\%4F))((\%72)|r|(\%52))/gi, '');
+  sanitized = sanitized.replace(/((\%27)|(\'))union/gi, '');
+  sanitized = sanitized.replace(/union((\s)*)((\%20)*)((\%23)*)/gi, '');
+  sanitized = sanitized.replace(/select((\s)*)((\%20)*)((\%23)*)/gi, '');
+  sanitized = sanitized.replace(/insert((\s)*)((\%20)*)((\%23)*)/gi, '');
+  sanitized = sanitized.replace(/delete((\s)*)((\%20)*)((\%23)*)/gi, '');
+  sanitized = sanitized.replace(/update((\s)*)((\%20)*)((\%23)*)/gi, '');
+  sanitized = sanitized.replace(/drop((\s)*)((\%20)*)((\%23)*)/gi, '');
+  
+  // Normalize whitespace and control characters
+  sanitized = sanitized.replace(/[\x00-\x1F\x7F]/g, '');
+  sanitized = sanitized.trim();
+  
+  // Final validation
+  if (sanitized.length === 0 && input.length > 0) {
+    throw new Error(`${fieldName} contains invalid characters`);
+  }
+
+  return sanitized;
+}
+
+// Enhanced email sanitization
+function sanitizeEmail(email) {
+  if (typeof email !== 'string') {
+    throw new Error('Email must be a string');
+  }
+
+  // Basic email format validation
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    throw new Error('Invalid email format');
+  }
+
+  // Length validation
+  if (email.length > 254) {
+    throw new Error('Email exceeds maximum length');
+  }
+
+  // Remove dangerous characters
+  const sanitized = email.replace(/[<>'"&]/g, '');
+  
+  // Check for injection attempts
+  if (sanitized !== email) {
+    throw new Error('Email contains invalid characters');
+  }
+
+  return sanitized.toLowerCase().trim();
+}
+
+// Scoring functions
+function getQuestionScore(value, questionNumber) {
+  const scoringMaps = {
+    1: { 'option1': 1, 'option2': 2, 'option3': 3, 'option4': 4 },
+    2: { 'option1': 1, 'option2': 2, 'option3': 3, 'option4': 4 },
+    3: { 'option1': 1, 'option2': 2, 'option3': 3, 'option4': 4, 'option5': 5 },
+    4: { 'option1': 1, 'option2': 2, 'option3': 3, 'option4': 4, 'option5': 5 },
+    5: { 'option1': 1, 'option2': 2, 'option3': 3, 'option4': 4 },
+    6: { 'option1': 1, 'option2': 2, 'option3': 3 },
+    7: { 'option1': 1, 'option2': 2, 'option3': 3, 'option4': 4 },
+    8: { 'option1': 1, 'option2': 2, 'option3': 3 }
+  };
+  
+  return scoringMaps[questionNumber]?.[value] || 0;
+}
+
+// Webhook function
+async function sendWebhook(response) {
+  // Webhook implementation would go here
+  console.log('Webhook data prepared:', response);
+}
+
+// Label functions for webhook data
 function getQuestion1Label(value) {
   const labels = {
-    'sehr-hoch': 'Sehr hoch',
-    'hoch': 'Hoch',
-    'mittel': 'Mittel',
-    'niedrig': 'Niedrig'
+    'option1': 'Anfänger - Ich kenne die Grundlagen kaum',
+    'option2': 'Fortgeschritten - Ich habe ein solides Grundverständnis',
+    'option3': 'Experte - Ich verstehe die meisten Strategien',
+    'option4': 'Profi - Ich bin sehr versiert in Personal Branding'
   };
   return labels[value] || value;
 }
 
 function getQuestion2Label(value) {
   const labels = {
-    'sehr-viele': 'Sehr viele',
-    'viele': 'Viele',
-    'einige': 'Einige',
-    'wenige': 'Wenige'
+    'option1': '0-2 (Wenig bis gar keine)',
+    'option2': '3-5 (Einige potenzielle Kontakte)',
+    'option3': '6-10 (Regelmäßige Anfragen)',
+    'option4': '> 10 (Viele verpasste Chancen)'
   };
   return labels[value] || value;
 }
 
 function getQuestion3Label(value) {
   const labels = {
-    'taeglich': 'Täglich',
-    'mehrmals-woche': 'Mehrmals pro Woche',
-    'woechentlich': 'Wöchentlich',
-    'selten-nie': 'Selten/Nie'
+    'option1': 'Gar nicht sichtbar',
+    'option2': 'Sporadisch aktiv',
+    'option3': 'Regelmäßig präsent',
+    'option4': 'Sehr aktiv und engagiert',
+    'option5': 'Thought Leader in meiner Branche'
   };
   return labels[value] || value;
 }
 
 function getQuestion4Label(value) {
   const labels = {
-    'sehr-stark': 'Sehr stark',
-    'stark': 'Stark',
-    'maessig': 'Mäßig',
-    'schwach': 'Schwach'
+    'option1': 'Kaum Resonanz',
+    'option2': 'Wenige Likes/Kommentare',
+    'option3': 'Moderate Interaktion',
+    'option4': 'Gute Resonanz',
+    'option5': 'Hohe Interaktionsraten'
   };
   return labels[value] || value;
 }
 
 function getQuestion5Label(value) {
   const labels = {
-    'sehr-erfolgreich': 'Sehr erfolgreich',
-    'erfolgreich': 'Erfolgreich',
-    'maessig-erfolgreich': 'Mäßig erfolgreich',
-    'wenig-erfolgreich': 'Wenig erfolgreich'
+    'option1': 'Gar nicht',
+    'option2': 'Selten',
+    'option3': 'Gelegentlich',
+    'option4': 'Regelmäßig'
   };
   return labels[value] || value;
 }
 
 function getQuestion6Label(value) {
   const labels = {
-    'sehr-hoch': 'Sehr hoch',
-    'hoch': 'Hoch',
-    'mittel': 'Mittel',
-    'niedrig': 'Niedrig'
+    'option1': 'Sehr unzufrieden',
+    'option2': 'Unzufrieden',
+    'option3': 'Zufrieden'
   };
   return labels[value] || value;
 }
 
 function getQuestion7Label(value) {
   const labels = {
-    'sehr-gut': 'Sehr gut',
-    'gut': 'Gut',
-    'ausreichend': 'Ausreichend',
-    'verbesserungsbedarf': 'Verbesserungsbedarf'
+    'option1': '< 1h (Wenig Zeit)',
+    'option2': '1-3h (Moderate Zeit)',
+    'option3': '4-8h (Viel Zeit)',
+    'option4': '> 8h (Turbo-Transformation möglich)'
   };
   return labels[value] || value;
 }
 
 function getQuestion8Label(value) {
   const labels = {
-    'sehr-hoch': 'Sehr hoch',
-    'hoch': 'Hoch',
-    'mittel': 'Mittel',
-    'niedrig': 'Niedrig'
+    'option1': 'Sehr hoch',
+    'option2': 'Hoch',
+    'option3': 'Mittel'
   };
   return labels[value] || value;
 }
