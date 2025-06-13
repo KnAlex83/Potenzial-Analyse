@@ -29,7 +29,7 @@ const surveyResponses = pgTable("survey_responses", {
   timestamp: timestamp("timestamp").defaultNow().notNull(),
 });
 
-module.exports = async (req, res) => {
+  exports.handler = async (req, res) => {
   // Secure CORS configuration - only allow specific domains
   const allowedOrigins = [
     'https://potenzial.grovia-digital.com',
