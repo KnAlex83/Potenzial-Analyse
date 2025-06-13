@@ -573,7 +573,7 @@
                 totalScore += getQuestionScore(i, answer);
             }
 
-            const maxScore = 30; // 4+4+5+5+4+3+4+3 = 32, but using 30 for better percentage distribution
+            const maxScore = 32; // 4+4+5+5+4+3+4+3 = 32, but using 30 for better percentage distribution
             const scorePercentage = Math.round((totalScore / maxScore) * 100);
             
             const submissionData = {
