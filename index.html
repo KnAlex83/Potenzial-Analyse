@@ -627,17 +627,28 @@
             };
 
             try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
+    
                 await fetch('https://potenzial.grovia-digital.com/.netlify/functions/survey', {
                     method: 'POST',
                     headers: { 
                         'Content-Type': 'application/json',
                         'X-API-Key': 'survey-api-2024-secure'
                     },
-                    body: JSON.stringify(submissionData)
+                    body: JSON.stringify(submissionData),
+                    signal: controller.signal
                 });
+    
+                clearTimeout(timeoutId);
             } catch (error) {
                 console.log('Submission logged locally');
             }
+
+            // Show result immediately regardless of API response
+            setTimeout(() => {
+                showResult(scorePercentage);
+            }, 500); // Small delay for better UX
 
             showResult(scorePercentage);
         }
