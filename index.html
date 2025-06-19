@@ -343,7 +343,7 @@
 
             <div id="survey-content">
                 <div class="progress-section">
-                    <div class="progress-text" id="progress-text">Schritt 1 von 9</div>
+                    <div class="progress-text" id="progress-text">Schritt 1 von 8</div>
                     <div class="progress-bar">
                         <div class="progress-fill" id="progress-fill" style="width: 11.11%;"></div>
                     </div>
@@ -363,7 +363,7 @@
                 <div class="result-card">
                     <div id="score-display"></div>
                     <div id="result-message"></div>
-                    <button class="btn btn-primary" onclick="restartSurvey()">Neue Analyse starten</button>
+                    <a href="https://grovia-digital.com/masterclass/" class="btn btn-primary">Erhöhe deine Online-Reichweite</a>
                 </div>
             </div>
 
@@ -508,7 +508,7 @@
             
             prevBtn.style.display = currentStep > 1 ? 'block' : 'none';
             
-            if (currentStep === 9) {
+            if (currentStep === 8) {
                 nextBtn.textContent = 'Analyse abschließen';
                 const firstName = answers.firstName && answers.firstName.trim();
                 const email = answers.email && answers.email.trim();
@@ -520,7 +520,7 @@
         }
 
         function nextStep() {
-            if (currentStep === 9) {
+            if (currentStep === 8) {
                 submitSurvey();
                 return;
             }
