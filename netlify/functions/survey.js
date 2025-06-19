@@ -218,7 +218,7 @@ function sanitizeInputs(data) {
     }
   }
   
-  sanitized.totalScore = Math.max(0, Math.min(32, parseInt(data.totalScore) || 0));
+  sanitized.totalScore = Math.max(0, Math.min(30, parseInt(data.totalScore) || 0));
   sanitized.scorePercentage = Math.max(0, Math.min(100, parseInt(data.scorePercentage) || 0));
   
   return sanitized;
