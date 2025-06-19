@@ -491,10 +491,64 @@
             renderCurrentStep();
         }
 
+        function validateEmail(email) {
+            // Basic email format check
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            
+            if (!emailRegex.test(email)) {
+                return { valid: false, message: 'Bitte geben Sie eine gültige E-Mail-Adresse ein.' };
+            }
+            
+            // Check for obvious typos in common domains
+            const domain = email.split('@')[1].toLowerCase();
+            const typoChecks = {
+                'gmial.com': 'gmail.com',
+                'gmai.com': 'gmail.com',
+                'yahooo.com': 'yahoo.com',
+                'outlok.com': 'outlook.com',
+                'hotmial.com': 'hotmail.com'
+            };
+            
+            if (typoChecks[domain]) {
+                return { valid: false, message: `Meinten Sie ${typoChecks[domain]}?` };
+            }
+            
+            // Check for minimum domain requirements (at least one dot)
+            if (!domain.includes('.') || domain.length < 4) {
+                return { valid: false, message: 'Bitte überprüfen Sie Ihre E-Mail-Adresse.' };
+            }
+            
+            return { valid: true, message: '' };
+        }
+
         function updateContactInfo(field, value) {
             answers[field] = value;
+            
+            if (field === 'email' && value) {
+                const validation = validateEmail(value);
+                const emailInput = document.getElementById('email');
+                const existingError = document.querySelector('.email-error');
+                
+                if (existingError) {
+                    existingError.remove();
+                }
+                
+                if (!validation.valid) {
+                    emailInput.style.borderColor = '#ef4444';
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'email-error';
+                    errorDiv.style.color = '#ef4444';
+                    errorDiv.style.fontSize = '14px';
+                    errorDiv.style.marginTop = '4px';
+                    errorDiv.textContent = validation.message;
+                    emailInput.parentNode.appendChild(errorDiv);
+                } else {
+                    emailInput.style.borderColor = '#22c55e';
+                }
+            }
+            
             updateButtons();
-        }
+        } 
 
         function updateProgress() {
             const progress = (currentStep / totalSteps) * 100;
