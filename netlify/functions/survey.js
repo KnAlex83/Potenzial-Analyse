@@ -14,6 +14,7 @@ const surveyResponses = pgTable("survey_responses", {
   question5: text("question5").notNull(),
   question6: text("question6").notNull(),
   question7: text("question7").notNull(),
+  question8: text("question8").notNull(),
   firstName: text("first_name").notNull(),
   email: text("email").notNull(),
   totalScore: integer("total_score").notNull(),
