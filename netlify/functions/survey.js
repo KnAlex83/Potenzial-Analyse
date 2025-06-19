@@ -14,7 +14,6 @@ const surveyResponses = pgTable("survey_responses", {
   question5: text("question5").notNull(),
   question6: text("question6").notNull(),
   question7: text("question7").notNull(),
-  question8: text("question8").notNull(),
   firstName: text("first_name").notNull(),
   email: text("email").notNull(),
   totalScore: integer("total_score").notNull(),
@@ -84,7 +83,7 @@ exports.handler = async (event, context) => {
       const data = JSON.parse(event.body || '{}');
       const sanitizedData = sanitizeInputs(data);
       
-      const requiredQuestions = ['question1', 'question2', 'question3', 'question4', 'question5', 'question6', 'question7', 'question8'];
+      const requiredQuestions = ['question1', 'question2', 'question3', 'question4', 'question5', 'question6', 'question7'];
       for (const field of requiredQuestions) {
         if (!sanitizedData[field]) {
           return {
@@ -120,7 +119,6 @@ exports.handler = async (event, context) => {
         question5: sanitizedData.question5,
         question6: sanitizedData.question6,
         question7: sanitizedData.question7,
-        question8: sanitizedData.question8,
         firstName: sanitizedData.firstName,
         email: sanitizedData.email,
         totalScore: totalScore,
@@ -203,7 +201,7 @@ exports.handler = async (event, context) => {
 function sanitizeInputs(data) {
   const sanitized = {};
   
-  const stringFields = ['question1', 'question2', 'question3', 'question4', 'question5', 'question6', 'question7', 'question8', 'firstName', 'email'];
+  const stringFields = ['question1', 'question2', 'question3', 'question4', 'question5', 'question6', 'question7', 'firstName', 'email'];
   
   for (const field of stringFields) {
     if (data[field]) {
@@ -242,7 +240,6 @@ async function sendWebhook(response) {
         question5: getQuestion5Label(response.question5),
         question6: getQuestion6Label(response.question6),
         question7: getQuestion7Label(response.question7),
-        question8: getQuestion8Label(response.question8)
       }
     };
 
