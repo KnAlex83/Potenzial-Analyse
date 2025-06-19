@@ -120,6 +120,7 @@ exports.handler = async (event, context) => {
         question5: sanitizedData.question5,
         question6: sanitizedData.question6,
         question7: sanitizedData.question7,
+        question8: sanitizedData.question8 || 'option1',
         firstName: sanitizedData.firstName,
         email: sanitizedData.email,
         totalScore: totalScore,
@@ -202,7 +203,7 @@ exports.handler = async (event, context) => {
 function sanitizeInputs(data) {
   const sanitized = {};
   
-  const stringFields = ['question1', 'question2', 'question3', 'question4', 'question5', 'question6', 'question7', 'firstName', 'email'];
+  const stringFields = ['question1', 'question2', 'question3', 'question4', 'question5', 'question6', 'question7', 'question8', 'firstName', 'email'];
   
   for (const field of stringFields) {
     if (data[field]) {
