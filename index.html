@@ -382,7 +382,7 @@
 
     <script>
         let currentStep = 1;
-        const totalSteps = 9;
+        const totalSteps = 8;
         const answers = {};
 
         const questions = [
@@ -453,7 +453,7 @@
         function renderCurrentStep() {
             const container = document.getElementById('question-container');
             
-            if (currentStep <= 8) {
+            if (currentStep <= 7) {
                 const question = questions[currentStep - 1];
                 container.innerHTML = `
                     <div class="question-title">${question.title}</div>
@@ -466,7 +466,7 @@
                         `).join('')}
                     </div>
                 `;
-            } else if (currentStep === 9) {
+            } else if (currentStep === 8) {
                 container.innerHTML = `
                     <div class="contact-title">Kontaktdaten für dein persönliches Ergebnis</div>
                     <div class="form-group">
