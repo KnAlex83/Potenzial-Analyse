@@ -759,12 +759,13 @@
             
             const submissionData = {
                 ...answers,
+                gdprConsent: true,
                 totalScore,
                 scorePercentage
             };
 
             try {
-                await fetch('https://potenzial.grovia-digital.com/.netlify/functions/survey', {
+                await fetch('/.netlify/functions/survey', {
                     method: 'POST',
                     headers: { 
                         'Content-Type': 'application/json',
