@@ -98,8 +98,7 @@ exports.handler = async (event, context) => {
             })
           };
         }
-      }
-      
+      }     
       const totalScore = sanitizedData.totalScore || 0;
       const scorePercentage = sanitizedData.scorePercentage || 0;
 
@@ -181,17 +180,6 @@ exports.handler = async (event, context) => {
             console.error('Systeme.io API Error:', systemeError);
         }
     }
-
-      if (!sanitizedData.firstName || !sanitizedData.email) {
-        return {
-          statusCode: 400,
-          headers,
-          body: JSON.stringify({
-            success: false,
-            message: "Vorname und E-Mail sind erforderlich"
-          })
-        };
-      }
       
       const response = {
         question1: sanitizedData.question1,
