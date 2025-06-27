@@ -1,6 +1,6 @@
 const { Pool, neonConfig } = require('@neondatabase/serverless');
 const { drizzle } = require('drizzle-orm/neon-serverless');
-const { pgTable, text, serial, timestamp, integer } = require('drizzle-orm/pg-core');
+const { pgTable, text, serial, timestamp, integer, boolean } = require('drizzle-orm/pg-core');
 const ws = require('ws');
 
 neonConfig.webSocketConstructor = ws;
@@ -14,7 +14,8 @@ const surveyResponses = pgTable("survey_responses", {
   question5: text("question5").notNull(),
   question6: text("question6").notNull(),
   question7: text("question7").notNull(),
-  question8: text("question8").notNull(),
+  gdprConsent: boolean("gdpr_consent").default(false),
+  systemeIoContactId: text("systeme_io_contact_id"),
   firstName: text("first_name").notNull(),
   email: text("email").notNull(),
   totalScore: integer("total_score").notNull(),
@@ -69,6 +70,18 @@ exports.handler = async (event, context) => {
       };
     }
     
+    // Add after existing validation
+    if (!data.gdprConsent) {
+        return {
+            statusCode: 400,
+            headers,
+            body: JSON.stringify({
+                success: false,
+                message: "GDPR consent is required"
+            })
+        };
+    }
+
     if (!apiKey || apiKey !== process.env.API_KEY) {
       return {
         statusCode: 401,
@@ -98,6 +111,71 @@ exports.handler = async (event, context) => {
         }
       }
       
+      let systemeContactId = null;
+
+      // Add contact to systeme.io (only if GDPR consent given)
+      if (data.gdprConsent && process.env.SYSTEME_IO_API_KEY) {
+          try {
+              // Check if contact exists
+              const checkResponse = await fetch(`https://api.systeme.io/api/contacts?email=${encodeURIComponent(surveyData.email)}`, {
+                  method: 'GET',
+                  headers: {
+                      'Content-Type': 'application/json',
+                      'X-API-Key': process.env.SYSTEME_IO_API_KEY
+                  }
+              });
+
+              if (checkResponse.ok) {
+                  const existingContacts = await checkResponse.json();
+            
+                  if (existingContacts.items && existingContacts.items.length > 0) {
+                      // Update existing contact
+                      const contactId = existingContacts.items[0].id;
+                      systemeContactId = contactId;
+                
+                      await fetch(`https://api.systeme.io/api/contacts/${contactId}`, {
+                          method: 'PATCH',
+                          headers: {
+                              'Content-Type': 'application/json',
+                              'X-API-Key': process.env.SYSTEME_IO_API_KEY
+                          },
+                          body: JSON.stringify({
+                              locale: 'de',
+                              fields: [
+                                  { slug: 'first_name', value: surveyData.firstName },
+                                  { slug: 'personal_branding_score', value: surveyData.scorePercentage.toString() }
+                              ]
+                          })
+                      });
+                  } else {
+                    // Create new contact
+                    const createResponse = await fetch('https://api.systeme.io/api/contacts', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-API-Key': process.env.SYSTEME_IO_API_KEY
+                        },
+                        body: JSON.stringify({
+                            email: surveyData.email,
+                            locale: 'de',
+                            fields: [
+                                { slug: 'first_name', value: surveyData.firstName },
+                                { slug: 'personal_branding_score', value: surveyData.scorePercentage.toString() }
+                            ]
+                        })
+                    });
+
+                    if (createResponse.ok) {
+                        const newContact = await createResponse.json();
+                        systemeContactId = newContact.id;
+                    }
+                }
+            }
+        } catch (systemeError) {
+            console.error('Systeme.io API Error:', systemeError);
+        }
+    }
+
       if (!sanitizedData.firstName || !sanitizedData.email) {
         return {
           statusCode: 400,
