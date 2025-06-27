@@ -169,11 +169,6 @@ exports.handler = async (event, context) => {
           } else {
               console.error('Create failed:', createResponse.status, await createResponse.text());
           }
-
-                    if (createResponse.ok) {
-                        const newContact = await createResponse.json();
-                        systemeContactId = newContact.id;
-                    }
                 }
             }
         } catch (systemeError) {
