@@ -302,6 +302,98 @@
         .footer-link:hover {
             color: var(--foreground);
         }
+        
+        .gdpr-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--foreground);
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        .gdpr-content {
+            text-align: left;
+        }
+
+        .gdpr-text {
+            background: var(--muted);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .gdpr-text h3 {
+            color: var(--primary);
+            margin-bottom: 12px;
+            font-size: 18px;
+        }
+
+        .gdpr-text ul {
+            margin: 12px 0;
+            padding-left: 20px;
+        }
+
+        .gdpr-text li {
+            margin-bottom: 8px;
+            color: var(--muted-foreground);
+        }
+
+        .gdpr-checkbox {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 16px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: var(--background);
+        }
+
+        .gdpr-checkbox:hover {
+            border-color: var(--primary);
+            background: var(--muted);
+        }
+
+        .gdpr-checkbox.selected {
+            border-color: var(--primary);
+            background: var(--primary);
+            color: var(--primary-foreground);
+        }
+
+        .checkbox-input {
+            margin: 0;
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+        }
+
+        .checkbox-label {
+            line-height: 1.5;
+            font-size: 14px;
+        }
+
+        .consent-success {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .success-icon {
+            font-size: 48px;
+            color: #10b981;
+            margin-bottom: 16px;
+        }
+
+        .consent-success h3 {
+            color: var(--foreground);
+            margin-bottom: 12px;
+            font-size: 24px;
+        }
+
+        .consent-success p {
+            color: var(--muted-foreground);
+            font-size: 16px;
+        }
 
         @media (max-width: 768px) {
             .container {
@@ -343,7 +435,7 @@
 
             <div id="survey-content">
                 <div class="progress-section">
-                    <div class="progress-text" id="progress-text">Schritt 1 von 8</div>
+                    <div class="progress-text" id="progress-text">Schritt 1 von 10</div>
                     <div class="progress-bar">
                         <div class="progress-fill" id="progress-fill" style="width: 11.11%;"></div>
                     </div>
@@ -382,7 +474,7 @@
 
     <script>
         let currentStep = 1;
-        const totalSteps = 8;
+        const totalSteps = 10;
         const answers = {};
 
         const questions = [
@@ -468,17 +560,40 @@
                 `;
             } else if (currentStep === 8) {
                 container.innerHTML = `
-                    <div class="contact-title">Kontaktdaten für dein persönliches Ergebnis</div>
-                    <div class="form-group">
-                        <label class="form-label">Vorname *</label>
-                        <input type="text" id="firstName" class="form-input" value="${answers.firstName || ''}" oninput="updateContactInfo('firstName', this.value)" onchange="updateContactInfo('firstName', this.value)" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">E-Mail-Adresse *</label>
-                        <input type="email" id="email" class="form-input" value="${answers.email || ''}" oninput="updateContactInfo('email', this.value)" onchange="updateContactInfo('email', this.value)" required>
+                    <div class="gdpr-title">Datenschutz und Einverständnis</div>
+                    <div class="gdpr-content">
+                        <div class="gdpr-text">
+                            <h3>Verwendung Ihrer Daten</h3>
+                            <p>Mit dem Absenden dieser Analyse stimmen Sie zu, dass wir:</p>
+                            <ul>
+                                <li>✓ Ihre Antworten zur Erstellung Ihres persönlichen Ergebnisses verwenden</li>
+                                <li>✓ Sie per E-Mail über passende Personal Branding Angebote informieren dürfen</li>
+                                <li>✓ Ihre Kontaktdaten für Marketingzwecke nutzen (Widerruf jederzeit möglich)</li>
+                            </ul>
+                
+                            <h3>DSGVO-konforme Datenverarbeitung</h3>
+                            <p>Ihre Daten werden verschlüsselt übertragen und DSGVO-konform gespeichert. Sie können der Nutzung jederzeit widersprechen und Ihre Daten löschen lassen.</p>
+                
+                            <p><strong>Detaillierte Informationen finden Sie in unserer <a href="#" class="footer-link">Datenschutzerklärung</a>.</strong></p>
+                        </div>
+            
+                        <label class="gdpr-checkbox ${answers.gdprConsent ? 'selected' : ''}" onclick="updateGdprConsent()">
+                            <input type="checkbox" class="checkbox-input" ${answers.gdprConsent ? 'checked' : ''}>
+                            <span class="checkbox-label">
+                                <strong>Ja, ich stimme der Datenverarbeitung zu und möchte über Personal Branding Angebote informiert werden.</strong>
+                            </span>
+                        </label>
                     </div>
                 `;
-            }
+            } else if (currentStep === 9) {
+                container.innerHTML = `
+                    <div class="consent-success">
+                        <div class="success-icon">✓</div>
+                        <h3>Datenschutz akzeptiert</h3>
+                        <p>Vielen Dank für Ihr Vertrauen. Jetzt können Sie Ihre Kontaktdaten eingeben, um Ihr persönliches Ergebnis zu erhalten.</p>
+                    </div>
+                `;
+            } else if (currentStep === 10) {
 
             updateProgress();
             updateButtons();
@@ -550,6 +665,11 @@
             updateButtons();
         } 
 
+        function updateGdprConsent() {
+            answers.gdprConsent = !answers.gdprConsent;
+            renderCurrentStep();
+        }
+
         function updateProgress() {
             const progress = (currentStep / totalSteps) * 100;
             document.getElementById('progress-text').textContent = `Schritt ${currentStep} von ${totalSteps}`;
@@ -563,10 +683,16 @@
             prevBtn.style.display = currentStep > 1 ? 'block' : 'none';
             
             if (currentStep === 8) {
+                nextBtn.textContent = 'Datenschutz akzeptieren';
+                nextBtn.disabled = !answers.gdprConsent;
+            } else if (currentStep === 9) {
+                nextBtn.textContent = 'Kontaktdaten eingeben';
+                nextBtn.disabled = false;
+            } else if (currentStep === 10) {
                 nextBtn.textContent = 'Analyse abschließen';
                 const firstName = answers.firstName && answers.firstName.trim();
                 const email = answers.email && answers.email.trim();
-                nextBtn.disabled = !firstName || !email;
+               nextBtn.disabled = !firstName || !email;
             } else {
                 nextBtn.textContent = 'Weiter';
                 nextBtn.disabled = !answers[`question${currentStep}`];
@@ -574,7 +700,7 @@
         }
 
         function nextStep() {
-            if (currentStep === 8) {
+            if (currentStep === 10) {
                 submitSurvey();
                 return;
             }
