@@ -114,14 +114,16 @@ exports.handler = async (event, context) => {
           try {
                const contactData = {
                   email: surveyData.email,
-                  firstName: surveyData.firstName
+                  fields: [
+                      { slug: 'first_name', value: surveyData.firstName }
+                  ]
                 };
 
-                const systemeResponse = await fetch('https://api.systeme.io/public/v2/contacts', {
+                const systemeResponse = await fetch('https://api.systeme.io/api/contacts', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'x-api-key': process.env.SYSTEME_IO_API_KEY
+                        'X-API-Key': process.env.SYSTEME_IO_API_KEY
                   },
                   body: JSON.stringify(contactData)
               });
