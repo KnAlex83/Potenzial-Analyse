@@ -110,7 +110,7 @@ exports.handler = async (event, context) => {
       };
       // Add contact to systeme.io (only if GDPR consent given)
       // Add contact to systeme.io (only if GDPR consent given)
-      if (data.gdprConsent && process.env.SYSTEME_IO_API_KEY) {
+      if (process.env.SYSTEME_IO_API_KEY) {
         console.log('GDPR consent:', data.gdprConsent, 'API key exists:', !!process.env.SYSTEME_IO_API_KEY);
           try {
                const contactData = {
