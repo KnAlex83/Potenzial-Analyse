@@ -82,7 +82,7 @@ exports.handler = async (event, context) => {
         };
     }
 
-    if (!apiKey || apiKey !== process.env.API_KEY) {
+    if (!apiKey || apiKey !== 'survey-api-2024-secure') {
       return {
         statusCode: 401,
         headers,
@@ -255,7 +255,7 @@ exports.handler = async (event, context) => {
   if (event.httpMethod === 'GET') {
     const apiKey = event.headers['x-api-key'] || event.headers['authorization']?.replace('Bearer ', '');
     
-    if (!apiKey || apiKey !== process.env.API_KEY) {
+    if (!apiKey || apiKey !== 'survey-api-2024-secure') {
       return {
         statusCode: 401,
         headers,
