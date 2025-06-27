@@ -594,6 +594,18 @@
                     </div>
                 `;
             } else if (currentStep === 10) {
+                container.innerHTML = `
+                    <div class="contact-title">Kontaktdaten für dein persönliches Ergebnis</div>
+                    <div class="form-group">
+                        <label class="form-label">Vorname *</label>
+                        <input type="text" id="firstName" class="form-input" value="${answers.firstName || ''}" oninput="updateContactInfo('firstName', this.value)" onchange="updateContactInfo('firstName', this.value)" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">E-Mail-Adresse *</label>
+                        <input type="email" id="email" class="form-input" value="${answers.email || ''}" oninput="updateContactInfo('email', this.value)" onchange="updateContactInfo('email', this.value)" required>
+                    </div>
+                `;
+            }
 
             updateProgress();
             updateButtons();
@@ -692,7 +704,7 @@
                 nextBtn.textContent = 'Analyse abschließen';
                 const firstName = answers.firstName && answers.firstName.trim();
                 const email = answers.email && answers.email.trim();
-               nextBtn.disabled = !firstName || !email;
+                nextBtn.disabled = !firstName || !email;
             } else {
                 nextBtn.textContent = 'Weiter';
                 nextBtn.disabled = !answers[`question${currentStep}`];
