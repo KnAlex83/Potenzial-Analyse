@@ -137,37 +137,47 @@ exports.handler = async (event, context) => {
                       const contactId = existingContacts.items[0].id;
                       systemeContactId = contactId;
                 
-                      await fetch(`https://api.systeme.io/api/contacts/${contactId}`, {
-                          method: 'PATCH',
-                          headers: {
-                              'Content-Type': 'application/json',
-                              'X-API-Key': process.env.SYSTEME_IO_API_KEY
-                          },
-                          body: JSON.stringify({
-                              locale: 'de',
-                              fields: [
-                                  { slug: 'first_name', value: surveyData.firstName },
-                                  { slug: 'personal_branding_score', value: surveyData.scorePercentage.toString() }
-                              ]
-                          })
-                      });
+                await fetch(`https://api.systeme.io/api/contacts/${contactId}`, {
+                  method: 'PATCH',
+                  headers: {
+                      'Content-Type': 'application/json',
+                      'X-API-Key': process.env.SYSTEME_IO_API_KEY
+                  },
+                  body: JSON.stringify({
+                      locale: 'de',
+                      fields: [
+                          { slug: 'first_name', value: surveyData.firstName },
+                          { slug: 'personal_branding_score', value: surveyData.scorePercentage.toString() }
+                      ]
+                  })
+            }).then(res => {
+                if (!res.ok) console.error('PATCH failed:', res.status);
+            });
                   } else {
-                    // Create new contact
-                    const createResponse = await fetch('https://api.systeme.io/api/contacts', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-API-Key': process.env.SYSTEME_IO_API_KEY
-                        },
-                        body: JSON.stringify({
-                            email: surveyData.email,
-                            locale: 'de',
-                            fields: [
-                                { slug: 'first_name', value: surveyData.firstName },
-                                { slug: 'personal_branding_score', value: surveyData.scorePercentage.toString() }
-                            ]
-                        })
-                    });
+             // Create new contact
+            const createResponse = await fetch('https://api.systeme.io/api/contacts', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'X-API-Key': process.env.SYSTEME_IO_API_KEY
+                },
+                body: JSON.stringify({
+                    email: surveyData.email,
+                    locale: 'de',
+                    fields: [
+                      { slug: 'first_name', value: surveyData.firstName },
+                      { slug: 'personal_branding_score', value: surveyData.scorePercentage.toString() }
+                  ]
+              })
+          });
+
+          if (createResponse.ok) {
+              const newContact = await createResponse.json();
+              systemeContactId = newContact.id;
+              console.log('Contact created:', newContact.id);
+          } else {
+              console.error('Create failed:', createResponse.status, await createResponse.text());
+          }
 
                     if (createResponse.ok) {
                         const newContact = await createResponse.json();
