@@ -112,7 +112,11 @@ exports.handler = async (event, context) => {
       }
       
       let systemeContactId = null;
-
+      const surveyData = {
+        firstName: sanitizedData.firstName,
+        email: sanitizedData.email,
+        scorePercentage: scorePercentage
+      };
       // Add contact to systeme.io (only if GDPR consent given)
       if (data.gdprConsent && process.env.SYSTEME_IO_API_KEY) {
           try {
@@ -198,7 +202,8 @@ exports.handler = async (event, context) => {
         question5: sanitizedData.question5,
         question6: sanitizedData.question6,
         question7: sanitizedData.question7,
-        question8: sanitizedData.question8 || 'option1',
+        gdprConsent: Boolean(data.gdprConsent),
+        systemeIoContactId: systemeContactId,
         firstName: sanitizedData.firstName,
         email: sanitizedData.email,
         totalScore: totalScore,
@@ -281,7 +286,7 @@ exports.handler = async (event, context) => {
 function sanitizeInputs(data) {
   const sanitized = {};
   
-  const stringFields = ['question1', 'question2', 'question3', 'question4', 'question5', 'question6', 'question7', 'question8', 'firstName', 'email'];
+  const stringFields = ['question1', 'question2', 'question3', 'question4', 'question5', 'question6', 'question7', 'firstName', 'email'];
   
   for (const field of stringFields) {
     if (data[field]) {
