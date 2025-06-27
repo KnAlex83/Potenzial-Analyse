@@ -58,18 +58,6 @@ exports.handler = async (event, context) => {
   if (event.httpMethod === 'POST') {
     // Authentication check
     const apiKey = event.headers['x-api-key'] || event.headers['authorization']?.replace('Bearer ', '');
-    
-    // Add after existing validation
-    if (!data.gdprConsent) {
-        return {
-            statusCode: 400,
-            headers,
-            body: JSON.stringify({
-                success: false,
-                message: "GDPR consent is required"
-            })
-        };
-    }
 
     if (!apiKey || apiKey !== 'survey-api-2024-secure') {
       return {
@@ -85,6 +73,18 @@ exports.handler = async (event, context) => {
     try {
       const data = JSON.parse(event.body || '{}');
       const sanitizedData = sanitizeInputs(data);
+
+      // GDPR consent validation
+      if (!data.gdprConsent) {
+          return {
+              statusCode: 400,
+              headers,
+              body: JSON.stringify({
+                  success: false,
+                  message: "GDPR consent is required"
+              })
+          };
+      }
       
       const requiredQuestions = ['question1', 'question2', 'question3', 'question4', 'question5', 'question6', 'question7'];
       for (const field of requiredQuestions) {
@@ -100,6 +100,9 @@ exports.handler = async (event, context) => {
         }
       }
       
+      const totalScore = sanitizedData.totalScore || 0;
+      const scorePercentage = sanitizedData.scorePercentage || 0;
+
       let systemeContactId = null;
       const surveyData = {
         firstName: sanitizedData.firstName,
@@ -189,9 +192,6 @@ exports.handler = async (event, context) => {
           })
         };
       }
-      
-      const totalScore = sanitizedData.totalScore || 0;
-      const scorePercentage = sanitizedData.scorePercentage || 0;
       
       const response = {
         question1: sanitizedData.question1,
