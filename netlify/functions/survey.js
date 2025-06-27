@@ -59,17 +59,6 @@ exports.handler = async (event, context) => {
     // Authentication check
     const apiKey = event.headers['x-api-key'] || event.headers['authorization']?.replace('Bearer ', '');
     
-    if (!process.env.API_KEY) {
-      return {
-        statusCode: 500,
-        headers,
-        body: JSON.stringify({
-          success: false,
-          message: "API key not configured"
-        })
-      };
-    }
-    
     // Add after existing validation
     if (!data.gdprConsent) {
         return {
