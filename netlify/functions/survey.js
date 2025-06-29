@@ -108,9 +108,9 @@ exports.handler = async (event, context) => {
         email: sanitizedData.email,
         scorePercentage: scorePercentage
       };
-      // Add contact to systeme.io (only if GDPR consent given)
-      // Add contact to systeme.io (only if GDPR consent given)
-      if (process.env.SYSTEME_IO_API_KEY) {
+    
+      // Contact to systeme.io (only if GDPR consent given)
+      if (data.gdprConsent === true && process.env.SYSTEME_IO_API_KEY) {
         console.log('GDPR consent:', data.gdprConsent, 'API key exists:', !!process.env.SYSTEME_IO_API_KEY);
           try {
                const contactData = {
@@ -121,26 +121,6 @@ exports.handler = async (event, context) => {
                   ]
                 };
 
-                const systemeResponse = await fetch('https://api.systeme.io/api/contacts', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-API-Key': process.env.SYSTEME_IO_API_KEY
-                  },
-                  body: JSON.stringify(contactData)
-              });
-
-              if (!systemeResponse.ok) {
-                  const errorText = await systemeResponse.text();
-                  console.error('Systeme.io API failed:', {
-                      status: systemeResponse.status,
-                      error: errorText
-                  });
-              } else {
-                  const result = await systemeResponse.json();
-                  console.log('Contact created in systeme.io:', result.id);
-                  systemeContactId = result.id;
-              }
           } catch (systemeError) {
               console.error('Systeme.io API Error:', systemeError);
           }
