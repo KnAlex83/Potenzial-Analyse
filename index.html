@@ -681,6 +681,7 @@
 
         function updateGdprConsent() {
             answers.gdprConsent = !answers.gdprConsent;
+            console.log('GDPR Consent updated to:', answers.gdprConsent);
             renderCurrentStep();
         }
 
@@ -766,6 +767,7 @@
                 totalScore,
                 scorePercentage
             };
+            console.log('Submitting with GDPR consent:', submissionData.gdprConsent);
 
             try {
                 await fetch('/.netlify/functions/survey', {
